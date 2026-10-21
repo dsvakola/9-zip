@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 9-zip MSIX manifest. build-msix.ps1 fills in the {{...}} values. -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap2="http://schemas.microsoft.com/appx/manifest/uap/windows10/2"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap uap2 uap3 rescap desktop4 desktop5 com">
+
+  <Identity Name="{{IDENTITY_NAME}}" Publisher="{{PUBLISHER}}" Version="{{VERSION}}" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>9-zip</DisplayName>
+    <PublisherDisplayName>{{PUBLISHER_DISPLAY_NAME}}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Free archive manager that works like 7-Zip, with the self-healing .9z format.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="NineZip" Executable="9-zip.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="9-zip"
+        Description="Archive manager with the self-healing .9z format"
+        BackgroundColor="#2B2E55"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          ShortName="9-zip"
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\SmallTile.png"
+          Square310x310Logo="Assets\LargeTile.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- The .9z format: 9-zip is its natural owner. -->
+        <uap3:Extension Category="windows.fileTypeAssociation">
+          <uap3:FileTypeAssociation Name="ninezip.format9z">
+            <uap:DisplayName>9-zip archive</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.9z</uap:FileType>
+            </uap:SupportedFileTypes>
+            <uap2:SupportedVerbs>
+              <uap3:Verb Id="open9z" Parameters="open &quot;%1&quot;">Open with 9-zip</uap3:Verb>
+              <uap3:Verb Id="extracthere9z" Parameters="extract_here &quot;%1&quot;">Extract here</uap3:Verb>
+              <uap3:Verb Id="extractto9z" Parameters="extract_to &quot;%1&quot;">Extract to folder</uap3:Verb>
+              <uap3:Verb Id="test9z" Parameters="test &quot;%1&quot;">Test archive</uap3:Verb>
+            </uap2:SupportedVerbs>
+          </uap3:FileTypeAssociation>
+        </uap3:Extension>
+
+        <!-- Other archive formats: offered in "Open with", never taken over. -->
+        <uap3:Extension Category="windows.fileTypeAssociation">
+          <uap3:FileTypeAssociation Name="ninezip.archives">
+            <uap:DisplayName>Archive</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.7z</uap:FileType>
+              <uap:FileType>.zip</uap:FileType>
+              <uap:FileType>.tar</uap:FileType>
+              <uap:FileType>.gz</uap:FileType>
+              <uap:FileType>.tgz</uap:FileType>
+              <uap:FileType>.bz2</uap:FileType>
+              <uap:FileType>.xz</uap:FileType>
+              <uap:FileType>.zst</uap:FileType>
+              <uap:FileType>.lz4</uap:FileType>
+              <uap:FileType>.br</uap:FileType>
+            </uap:SupportedFileTypes>
+            <uap2:SupportedVerbs>
+              <uap3:Verb Id="openarchive" Parameters="open &quot;%1&quot;">Open with 9-zip</uap3:Verb>
+              <uap3:Verb Id="extracthere" Parameters="extract_here &quot;%1&quot;">Extract here (9-zip)</uap3:Verb>
+              <uap3:Verb Id="extractto" Parameters="extract_to &quot;%1&quot;">Extract to folder (9-zip)</uap3:Verb>
+              <uap3:Verb Id="testarchive" Parameters="test &quot;%1&quot;">Test archive (9-zip)</uap3:Verb>
+            </uap2:SupportedVerbs>
+          </uap3:FileTypeAssociation>
+        </uap3:Extension>
+
+        <!-- The "9-zip" submenu in Explorer (Add to archive, Extract, Test),
+             served by ninezip_shell.dll. The Clsid matches CLSID_NINEZIP_MENU
+             in src-tauri/shell-ext/src/lib.rs. -->
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type="*">
+              <desktop5:Verb Id="NineZipMenu" Clsid="bc129e3b-1070-4766-9e57-27e5fa3f08d9" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="NineZipMenu" Clsid="bc129e3b-1070-4766-9e57-27e5fa3f08d9" />
+            </desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="9-zip Explorer menu">
+              <com:Class Id="bc129e3b-1070-4766-9e57-27e5fa3f08d9" Path="ninezip_shell.dll" ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Required for every desktop (Win32) app in the Store. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -1,0 +1,68 @@
+[package]
+name = "nine_z"
+version = "1.0.0"
+description = "9-zip - Archive manager for Windows"
+authors = ["Prof. Dattaraj S. Vidyasagar", "Prof. Yash D. Vidyasagar"]
+edition = "2024"
+
+[lib]
+name = "nine_z_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = "0.3"
+walkdir = "2.5"
+crc32fast = "1.4"
+sha2 = "0.10"
+md-5 = "0.10"
+sha1 = "0.10"
+
+# Compression algorithms
+zip = { version = "2.2", default-features = false, features = ["deflate", "bzip2", "time", "aes-crypto"] }
+sevenz-rust2 = { version = "0.24", features = ["deflate"] }
+tar = "0.4"
+flate2 = "1.0"
+bzip2 = "0.5"
+lzma-rust2 = "0.23"
+zstd = "0.13"
+lz4_flex = "0.11"
+brotli = "7.0"
+reed-solomon-erasure = "6.0"
+winreg = "0.52"
+
+# Windows API
+windows = { version = "0.58", features = [
+    "Win32_UI_Shell",
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_SystemInformation",
+    "Win32_Storage_Packaging_Appx",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Com",
+] }
+drag = "2.1.1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+
+# Test builds without debug information: the build folder stays a few GB
+# instead of 15 GB.
+[profile.dev]
+debug = 0
+
+# Optimise dependencies in debug builds, so tests that compress with LZMA2
+# run at a useful speed.
+[profile.dev.package."*"]
+opt-level = 2

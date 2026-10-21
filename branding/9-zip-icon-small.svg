@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 9-zip icon for 16-32 px: fewer details, thicker strokes. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2E55"/>
+      <stop offset="1" stop-color="#0A6EB4"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6" fill="url(#tile)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="4.2" stroke-linecap="round">
+    <circle cx="10.5" cy="12" r="4.6"/>
+    <path d="M15.1 12 V17.5 C15.1 22.5 12.5 25 8 25.2"/>
+  </g>
+  <path d="M24 8.5 L30 10.8 V17 C30 22 27.4 25.2 24 27 C20.6 25.2 18 22 18 17 V10.8 Z" fill="#FCC419"/>
+</svg>

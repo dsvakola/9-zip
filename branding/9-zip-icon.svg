@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- 9-zip app icon. Colours from the Vidyasagar Robotics Academy logo. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2E55"/>
+      <stop offset="1" stop-color="#0A6EB4"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE477"/>
+      <stop offset="1" stop-color="#FCC419"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#tile)"/>
+  <!-- the "9" -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round">
+    <circle cx="80" cy="98" r="36"/>
+    <path d="M116 98 V142 C116 178 96 198 62 200"/>
+  </g>
+  <!-- the self-healing shield with a "z" -->
+  <path d="M188 62 L238 80 V132 C238 172 216 198 188 214 C160 198 138 172 138 132 V80 Z" fill="url(#gold)"/>
+  <path d="M165 106 H211 L165 164 H211" fill="none" stroke="#2B2E55" stroke-width="16" stroke-linejoin="miter" stroke-linecap="square"/>
+</svg>

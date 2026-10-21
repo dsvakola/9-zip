@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "9-zip",
+  "version": "1.0.0",
+  "identifier": "in.edu.vsa.ninezip",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "9-zip",
+        "width": 1000,
+        "height": 680,
+        "minWidth": 800,
+        "minHeight": 520,
+        "center": true,
+        "resizable": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "Vidyasagar Academy",
+    "copyright": "Copyright © 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar",
+    "shortDescription": "9-zip - archive manager with the self-healing .9z format",
+    "longDescription": "9-zip is a free archive manager for Windows. It creates 10 formats (9Z, 7Z, ZIP, TAR, GZIP, BZIP2, XZ, ZSTD, LZ4 and BROTLI), including the self-healing .9z format with built-in Reed-Solomon recovery data.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "nsis/hooks.nsh",
+        "installMode": "perMachine"
+      }
+    }
+  },
+  "mainBinaryName": "9-zip"
+}

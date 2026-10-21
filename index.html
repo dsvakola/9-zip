@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>9-zip</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/9-zip-icon.svg" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <div id="app" class="app-window">
+      <!-- 1. Classic Windows Menu Bar -->
+      <nav class="menu-bar">
+        <div class="menu-item" id="menu-file">
+          <span>File</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-open">Open <span class="shortcut">Enter</span></div>
+            <div class="menu-entry" id="m-open-inside">Open Inside <span class="shortcut">Ctrl+PgDn</span></div>
+            <div class="menu-separator"></div>
+            <div class="menu-entry" id="m-view">View <span class="shortcut">F3</span></div>
+            <div class="menu-entry" id="m-edit">Edit <span class="shortcut">F4</span></div>
+            <div class="menu-entry" id="m-rename">Rename <span class="shortcut">F2</span></div>
+            <div class="menu-entry" id="m-copy">Copy To... <span class="shortcut">F5</span></div>
+            <div class="menu-entry" id="m-move">Move To... <span class="shortcut">F6</span></div>
+            <div class="menu-entry" id="m-delete">Delete <span class="shortcut">Del</span></div>
+            <div class="menu-separator"></div>
+            <div class="menu-entry" id="m-properties">Properties <span class="shortcut">Alt+Enter</span></div>
+            <div class="menu-separator"></div>
+            <div class="menu-entry" id="m-exit">Exit <span class="shortcut">Alt+F4</span></div>
+          </div>
+        </div>
+        <div class="menu-item" id="menu-edit">
+          <span>Edit</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-select-all">Select All <span class="shortcut">Ctrl+A</span></div>
+            <div class="menu-entry" id="m-deselect-all">Deselect All</div>
+            <div class="menu-entry" id="m-invert-selection">Invert Selection <span class="shortcut">Ctrl+I</span></div>
+          </div>
+        </div>
+        <div class="menu-item" id="menu-view">
+          <span>View</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-refresh">Refresh <span class="shortcut">Ctrl+R</span></div>
+
+          </div>
+        </div>
+        <div class="menu-item" id="menu-favorites">
+          <span>Favorites</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-fav-add">Add or Remove This Folder...</div>
+            <div class="menu-separator"></div>
+            <div id="favorites-list"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="menu-tools">
+          <span>Tools</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-tools-benchmark">Benchmark <span class="shortcut">Ctrl+B</span></div>
+            <div class="menu-entry" id="m-tools-hash">Checksum / Hash (CRC, SHA)...</div>
+            <div class="menu-separator"></div>
+            <div class="menu-entry" id="m-tools-register-menu">Register Explorer Context Menu</div>
+          </div>
+        </div>
+        <div class="menu-item" id="menu-help">
+          <span>Help</span>
+          <div class="dropdown-menu">
+            <div class="menu-entry" id="m-help-contents">Contents <span class="shortcut">F1</span></div>
+            <div class="menu-entry" id="m-help-inventions">The .9z Format...</div>
+            <div class="menu-separator"></div>
+            <div class="menu-entry" id="m-help-about">About 9-zip...</div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 2. Classic 7-Zip Style Big Toolbar -->
+      <div class="classic-toolbar">
+        <button id="btn-add" class="c-tool-btn" title="Add to archive (Compress)">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-add" viewBox="0 0 32 32">
+              <path d="M4 6h8l3 3h13c1.1 0 2 .9 2 2v15c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="#f5c542"/>
+              <circle cx="21" cy="21" r="9" fill="#27ae60"/>
+              <path d="M21 16v10M16 21h10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Add</span>
+        </button>
+
+        <button id="btn-extract" class="c-tool-btn" title="Extract files from archive">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-extract" viewBox="0 0 32 32">
+              <path d="M4 6h8l3 3h13c1.1 0 2 .9 2 2v15c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="#f5c542"/>
+              <circle cx="21" cy="21" r="9" fill="#2980b9"/>
+              <path d="M16 21h10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Extract</span>
+        </button>
+
+        <button id="btn-test" class="c-tool-btn" title="Test archive integrity">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-test" viewBox="0 0 32 32">
+              <path d="M4 6h8l3 3h13c1.1 0 2 .9 2 2v15c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="#f5c542"/>
+              <circle cx="21" cy="21" r="9" fill="#16a085"/>
+              <path d="M17 21l3 3 6-6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Test</span>
+        </button>
+
+        <div class="c-tool-sep"></div>
+
+        <button id="btn-copy" class="c-tool-btn" title="Copy To...">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-copy" viewBox="0 0 32 32">
+              <path d="M4 6h8l3 3h9c1.1 0 2 .9 2 2v13c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="#f5c542"/>
+              <path d="M18 16l6 5-6 5v-3H12v-4h6v-3z" fill="#27ae60"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Copy</span>
+        </button>
+
+        <button id="btn-move" class="c-tool-btn" title="Move To...">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-move" viewBox="0 0 32 32">
+              <path d="M4 6h8l3 3h9c1.1 0 2 .9 2 2v13c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="#f5c542"/>
+              <path d="M18 16l6 5-6 5v-3H12v-4h6v-3z" fill="#2980b9"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Move</span>
+        </button>
+
+        <button id="btn-delete" class="c-tool-btn" title="Delete (Move to Recycle Bin)">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-delete" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="13" fill="#e74c3c"/>
+              <path d="M11 11l10 10M21 11L11 21" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Delete</span>
+        </button>
+
+        <button id="btn-info" class="c-tool-btn" title="Properties / Info">
+          <div class="c-tool-icon-wrapper">
+            <svg class="c-tool-icon icon-info" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="13" fill="#f39c12"/>
+              <circle cx="16" cy="10" r="2" fill="#fff"/>
+              <path d="M16 14v8M14 14h2" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="c-tool-label">Info</span>
+        </button>
+      </div>
+
+      <!-- 3. Address / Location Bar -->
+      <div class="address-bar-container">
+        <button id="btn-nav-up" class="btn-up-dir" title="Up one level (..)">
+          <svg viewBox="0 0 16 16"><path d="M8 3l5 5h-3v5H6V8H3z" fill="#444"/></svg>
+        </button>
+        <div class="address-box">
+          <svg class="address-icon" id="address-type-icon" viewBox="0 0 16 16">
+            <path d="M2 3h4l2 2h6v8H2z" fill="#f5c542"/>
+          </svg>
+          <input type="text" id="input-path" class="address-input" spellcheck="false" value="C:\" />
+        </div>
+        <select id="select-drives" class="address-drives-select" title="Select Logical Drive">
+          <option value="C:\">C:</option>
+        </select>
+      </div>
+
+      <!-- 4. VSA Seal / Archive Mode Banner (Shown when inside an archive) -->
+      <div id="archive-banner" class="archive-bar hidden">
+        <div class="archive-bar-content">
+          <span class="archive-tag">ARCHIVE</span>
+          <span id="archive-banner-name" class="archive-title">archive.9z</span>
+          <span id="nine-z-seal-badge" class="seal-badge hidden">
+            🛡️ Self-healing .9z archive with VSA Integrity Seal. Click Test to check every file.
+          </span>
+        </div>
+        <button id="btn-exit-archive" class="btn-exit-bar">Exit Archive</button>
+      </div>
+
+      <!-- 5. Main File / Archive Grid -->
+      <main class="grid-container" id="grid-container">
+        <table class="grid-table" id="grid-table">
+          <thead>
+            <tr>
+              <th class="col-name" data-col="name">Name</th>
+              <th class="col-size" data-col="size">Size</th>
+              <th class="col-packed" data-col="packed">Packed Size</th>
+              <th class="col-modified" data-col="modified">Modified</th>
+              <th class="col-attributes" data-col="attributes">Attributes</th>
+              <th class="col-crc" data-col="crc">CRC / SHA</th>
+            </tr>
+          </thead>
+          <tbody id="grid-body">
+            <!-- Dynamic rows populated via TypeScript -->
+          </tbody>
+        </table>
+        <div id="empty-state" class="grid-empty hidden">
+          <p id="empty-state-text">Folder is empty</p>
+        </div>
+      </main>
+
+      <!-- 6. Status Bar -->
+      <footer class="classic-status-bar">
+        <div class="status-cell status-selection" id="status-selection">0 / 0 object(s) selected</div>
+        <div class="status-cell status-size" id="status-size">0 B</div>
+        <div class="status-cell status-total" id="status-total">0 items</div>
+        <div class="status-cell status-brand">9-zip · Vidyasagar Academy</div>
+      </footer>
+    </div>
+
+    <!-- MODAL: Compress (Add to archive) -->
+    <div id="modal-compress" class="modal-backdrop hidden">
+      <div class="modal-window compress-window">
+        <div class="modal-title-bar">
+          <span>Add to Archive</span>
+          <button class="modal-x" id="btn-close-compress">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label for="compress-output-name">Archive:</label>
+            <div class="input-row">
+              <input type="text" id="compress-output-name" class="m-input" />
+              <button id="btn-browse-dest" class="btn-m">...</button>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="select-format">Archive format:</label>
+              <select id="select-format" class="m-input">
+                <option value="9z" selected>9z (self-healing, smart-adaptive)</option>
+                <option value="zip">zip</option>
+                <option value="7z">7z</option>
+                <option value="tar">tar</option>
+                <option value="gzip">gzip</option>
+                <option value="bzip2">bzip2</option>
+                <option value="xz">xz</option>
+                <option value="zstd">zstd</option>
+                <option value="lz4">lz4</option>
+                <option value="brotli">brotli</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="select-level">Compression level:</label>
+              <select id="select-level" class="m-input">
+                <option value="store">0 - Store</option>
+                <option value="fastest">1 - Fastest</option>
+                <option value="fast">3 - Fast</option>
+                <option value="normal" selected>5 - Normal</option>
+                <option value="maximum">7 - Maximum</option>
+                <option value="ultra">9 - Ultra</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="select-threads">CPU threads:</label>
+              <select id="select-threads" class="m-input">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="8">8</option>
+                <option value="16">16</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- The .9z Advisory Notice -->
+          <div id="nine-z-advisory" class="advisory-box">
+            <div class="advisory-header">
+              <strong>Notice regarding the .9z format:</strong>
+            </div>
+            <p class="advisory-body">
+              .9z is the signature format of 9-zip. Recipients need <strong>9-zip</strong> to extract it.
+            </p>
+            <div class="form-group">
+              <label for="select-recovery">Recovery data:</label>
+              <select id="select-recovery" class="m-input">
+                <option value="low">Low - 5% (smallest archive)</option>
+                <option value="normal" selected>Normal - 10% (recommended)</option>
+                <option value="high">High - 20% (strongest repair)</option>
+              </select>
+            </div>
+            <div class="advisory-badges">
+              <span>🛡️ <strong>Self-Healing:</strong> Reed-Solomon recovery data repairs damaged blocks automatically</span>
+              <span>⚡ <strong>Smart-Adaptive:</strong> solid LZMA2 for text and code; photos and videos stored as they are</span>
+              <span>🔒 <strong>VSA Integrity Seal:</strong> every file is checked against its SHA-256 fingerprint</span>
+            </div>
+            <div class="advisory-url">
+              Free Microsoft Store / Download Link: <code>https://vsa.edu.in/software/</code>
+            </div>
+          </div>
+
+          <fieldset class="encryption-group" id="encryption-group">
+            <legend id="encryption-legend">Encryption (AES-256)</legend>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="compress-password">Enter password:</label>
+                <input type="password" id="compress-password" class="m-input" placeholder="Optional" autocomplete="new-password" />
+              </div>
+              <div class="form-group">
+                <label for="compress-password-again">Reenter password:</label>
+                <input type="password" id="compress-password-again" class="m-input" autocomplete="new-password" />
+              </div>
+            </div>
+            <div class="check-row">
+              <label><input type="checkbox" id="compress-show-password" /> Show password</label>
+              <label><input type="checkbox" id="compress-encrypt-names" checked /> Encrypt file names</label>
+            </div>
+          </fieldset>
+
+
+          <div class="summary-line" id="compress-summary">Selected: 0 items</div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-start-compress" class="btn-dialog-ok">OK</button>
+          <button id="btn-cancel-compress-dialog" class="btn-dialog-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Extract -->
+    <div id="modal-extract" class="modal-backdrop hidden">
+      <div class="modal-window">
+        <div class="modal-title-bar">
+          <span>Extract</span>
+          <button class="modal-x" id="btn-close-extract">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label for="extract-source">Source archive:</label>
+            <input type="text" id="extract-source" class="m-input readonly" readonly />
+          </div>
+          <div class="form-group">
+            <label for="extract-destination">Extract to:</label>
+            <div class="input-row">
+              <input type="text" id="extract-destination" class="m-input" />
+              <button id="btn-browse-extract-dest" class="btn-m">...</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="extract-password">Password (if encrypted):</label>
+            <input type="password" id="extract-password" class="m-input" placeholder="Password" />
+          </div>
+          <div class="form-checkbox">
+            <label><input type="checkbox" id="extract-overwrite" checked /> Overwrite existing files</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-start-extract" class="btn-dialog-ok">OK</button>
+          <button id="btn-cancel-extract-dialog" class="btn-dialog-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Live Progress Dialog -->
+    <div id="modal-progress" class="modal-backdrop hidden">
+      <div class="modal-window progress-window">
+        <div class="modal-title-bar">
+          <span id="progress-title">Compressing...</span>
+        </div>
+        <div class="modal-content">
+          <div class="prog-file-line" id="progress-file">Processing...</div>
+          <div class="prog-bar-frame">
+            <div id="progress-bar-fill" class="prog-bar-inner" style="width: 0%;"></div>
+          </div>
+          <div class="prog-stats-row">
+            <span id="progress-percent">0%</span>
+            <span id="progress-speed">0.0 MB/s</span>
+            <span id="progress-counts">0 / 0</span>
+          </div>
+          <div class="prog-bytes-line" id="progress-bytes">0 KB / 0 KB</div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-progress-cancel" class="btn-dialog-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Benchmark -->
+    <div id="modal-benchmark" class="modal-backdrop hidden">
+      <div class="modal-window">
+        <div class="modal-title-bar">
+          <span>Benchmark</span>
+          <button class="modal-x" id="btn-close-benchmark">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="bench-box">
+            <div class="bench-row">
+              <span>Compressing:</span>
+              <strong id="bench-comp-speed">-- MB/s</strong>
+              <span id="bench-comp-mips">-- MIPS</span>
+            </div>
+            <div class="bench-row">
+              <span>Decompressing:</span>
+              <strong id="bench-decomp-speed">-- MB/s</strong>
+              <span id="bench-decomp-mips">-- MIPS</span>
+            </div>
+            <hr />
+            <div class="bench-row total">
+              <span>Total Rating:</span>
+              <strong id="bench-total-rating" style="color: #0066cc;">-- MIPS</strong>
+              <span id="bench-threads">Threads: 4</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-run-benchmark" class="btn-dialog-ok">Start</button>
+          <button id="btn-close-benchmark-btn" class="btn-dialog-cancel">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Checksum / Hash -->
+    <div id="modal-hash" class="modal-backdrop hidden">
+      <div class="modal-window">
+        <div class="modal-title-bar">
+          <span>Checksum / Hash</span>
+          <button class="modal-x" id="btn-close-hash">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="hash-meta" id="hash-filename">File: --</div>
+          <div class="hash-meta" id="hash-filesize">Size: --</div>
+          <table class="hash-table">
+            <tr>
+              <td>CRC32:</td>
+              <td><code id="hash-crc32">--</code></td>
+              <td><button class="btn-copy" data-copy="hash-crc32">Copy</button></td>
+            </tr>
+            <tr>
+              <td>MD5:</td>
+              <td><code id="hash-md5">--</code></td>
+              <td><button class="btn-copy" data-copy="hash-md5">Copy</button></td>
+            </tr>
+            <tr>
+              <td>SHA-1:</td>
+              <td><code id="hash-sha1">--</code></td>
+              <td><button class="btn-copy" data-copy="hash-sha1">Copy</button></td>
+            </tr>
+            <tr>
+              <td>SHA-256:</td>
+              <td><code id="hash-sha256">--</code></td>
+              <td><button class="btn-copy" data-copy="hash-sha256">Copy</button></td>
+            </tr>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-close-hash-btn" class="btn-dialog-cancel">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Properties inside an archive (like 7-Zip's) -->
+    <div id="modal-properties" class="modal-backdrop hidden">
+      <div class="modal-window properties-window">
+        <div class="modal-title-bar">
+          <span>Properties</span>
+          <button class="modal-x" id="btn-properties-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <table class="properties-table"><tbody id="properties-table"></tbody></table>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-properties-ok" class="btn-dialog-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Rename -->
+    <div id="modal-rename" class="modal-backdrop hidden">
+      <div class="modal-window">
+        <div class="modal-title-bar">
+          <span>Rename</span>
+          <button class="modal-x" id="btn-rename-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="form-group">
+            <label for="rename-input">New name:</label>
+            <input type="text" id="rename-input" class="m-input" spellcheck="false" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-rename-ok" class="btn-dialog-ok">OK</button>
+          <button id="btn-rename-cancel" class="btn-dialog-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: About 9-zip -->
+    <div id="modal-about" class="modal-backdrop hidden">
+      <div class="modal-window about-window">
+        <div class="modal-title-bar">
+          <span>About 9-zip</span>
+          <button class="modal-x" id="btn-close-about">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="about-header-row">
+            <img src="/src/assets/9-zip-icon.svg" alt="9-zip" class="about-brand-logo" />
+            <div style="flex: 1;">
+              <h2 style="margin: 0; font-size: 18px; color: #111;">9-zip</h2>
+              <p style="margin: 3px 0 0; color: #555; font-size: 12px;" id="about-version">Version</p>
+            </div>
+            <img src="/src/assets/logo.png" alt="Vidyasagar Academy" class="about-brand-logo" />
+          </div>
+          <div class="about-text-body">
+            <p><strong>Developed by:</strong> Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar</p>
+            <p><strong>Organization:</strong> Vidyasagar Academy</p>
+            <p><strong>Website:</strong> <a href="#" class="external-link" data-url="https://vsa.edu.in/software/">https://vsa.edu.in/software/</a></p>
+            <p><strong>Email:</strong> <a href="#" class="external-link" data-url="mailto:softinquiry@vsa.edu.in">softinquiry@vsa.edu.in</a></p>
+          </div>
+          <div class="about-inventions-box">
+            <strong>The .9z format brings three features together:</strong>
+            <ul>
+              <li>🛡️ <strong>Self-Healing:</strong> Reed-Solomon recovery data (5%, 10% or 20%) repairs damaged blocks automatically, such as bad disk sectors or broken downloads.</li>
+              <li>⚡ <strong>Smart-Adaptive Compression:</strong> text, code and documents are packed together with LZMA2, while photos, videos and other already-compressed files are stored as they are, saving time.</li>
+              <li>🔒 <strong>VSA Integrity Seal:</strong> every file is checked against its SHA-256 fingerprint when it is tested or extracted, so damage or changes never go unnoticed.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-close-about-btn" class="btn-dialog-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Help (F1), laid out like 7-Zip's Help: contents left, page right -->
+    <div id="modal-help" class="modal-backdrop hidden">
+      <div class="modal-window help-window">
+        <div class="modal-title-bar">
+          <span>9-zip Help</span>
+          <button class="modal-x" id="btn-help-close">&times;</button>
+        </div>
+        <div class="help-body">
+          <nav class="help-contents" id="help-contents">
+            <a href="#" data-page="start">9-zip Start Page</a>
+            <a href="#" data-page="window">The 9-zip window</a>
+            <a href="#" data-page="keys">Keyboard shortcuts</a>
+            <a href="#" data-page="add">Adding files to an archive</a>
+            <a href="#" data-page="extract">Extracting and testing</a>
+            <a href="#" data-page="explorer">Explorer right-click menu</a>
+            <a href="#" data-page="nine-z">The .9z format</a>
+            <a href="#" data-page="passwords">Passwords and encryption</a>
+            <a href="#" data-page="formats">Supported formats</a>
+            <a href="#" data-page="faq">Frequently asked questions</a>
+          </nav>
+          <article class="help-page" id="help-page">
+            <section data-page="start">
+              <h1>9-zip</h1>
+              <p><strong>Welcome to 9-zip.</strong> 9-zip is a free archive manager for Windows. It works like 7-Zip and adds its own self-healing <strong>.9z</strong> format.</p>
+              <p>Choose a topic on the left, or start with:</p>
+              <ul>
+                <li><a href="#" data-goto="window">The 9-zip window</a></li>
+                <li><a href="#" data-goto="nine-z">The .9z format</a></li>
+                <li><a href="#" data-goto="keys">Keyboard shortcuts</a></li>
+              </ul>
+              <hr />
+              <p>Developed by Prof. Dattaraj S. Vidyasagar &amp; Prof. Yash D. Vidyasagar, for Vidyasagar Academy.<br />
+                Website: <a href="#" class="external-link" data-url="https://vsa.edu.in/software/">https://vsa.edu.in/software/</a><br />
+                Email: <a href="#" class="external-link" data-url="mailto:softinquiry@vsa.edu.in">softinquiry@vsa.edu.in</a></p>
+            </section>
+            <section data-page="window">
+              <h1>The 9-zip window</h1>
+              <p>The window lists the files and folders of one folder, or the contents of an open archive.</p>
+              <ul>
+                <li><strong>Open a folder or archive:</strong> double-click it, or type its path in the address box and press Enter.</li>
+                <li><strong>Go up one level:</strong> click the arrow left of the address box, or press Backspace.</li>
+                <li><strong>Open a file:</strong> double-click it. A file inside an archive is extracted to a temporary folder and opened in its usual program.</li>
+                <li><strong>Select several items:</strong> Ctrl+click to add one item, Shift+click to select a range.</li>
+                <li><strong>Copy items out:</strong> drag them into File Explorer, or use Copy (F5).</li>
+                <li><strong>Column widths:</strong> drag the edge of a column heading. 9-zip remembers the widths.</li>
+              </ul>
+              <p><strong>Toolbar:</strong> Add, Extract, Test, Copy, Move, Delete (to the Recycle Bin) and Info (Windows Properties).</p>
+              <p><strong>Favorites:</strong> Desktop, Documents, Downloads and drive C:\ are always there. Use <em>Add or Remove This Folder</em> for your own.</p>
+            </section>
+            <section data-page="keys">
+              <h1>Keyboard shortcuts</h1>
+              <table class="help-keys">
+                <tr><td>Enter</td><td>Open the selected item</td></tr>
+                <tr><td>Ctrl+PgDn</td><td>Open the selected archive inside 9-zip</td></tr>
+                <tr><td>Backspace</td><td>Go up one level</td></tr>
+                <tr><td>F1</td><td>Help</td></tr>
+                <tr><td>F2</td><td>Rename</td></tr>
+                <tr><td>F3</td><td>View (open in its usual program)</td></tr>
+                <tr><td>F4</td><td>Edit</td></tr>
+                <tr><td>F5</td><td>Copy to a folder (inside an archive: extract the selection)</td></tr>
+                <tr><td>F6</td><td>Move to a folder</td></tr>
+                <tr><td>Del</td><td>Send to the Recycle Bin</td></tr>
+                <tr><td>Alt+Enter</td><td>Properties</td></tr>
+                <tr><td>Ctrl+A</td><td>Select all</td></tr>
+                <tr><td>Ctrl+I</td><td>Invert selection</td></tr>
+                <tr><td>Ctrl+R</td><td>Refresh</td></tr>
+                <tr><td>Ctrl+B</td><td>Benchmark</td></tr>
+                <tr><td>Esc</td><td>Close a dialog</td></tr>
+              </table>
+            </section>
+            <section data-page="add">
+              <h1>Adding files to an archive</h1>
+              <ol>
+                <li>Select the files and folders.</li>
+                <li>Click <strong>Add</strong>.</li>
+                <li>Choose the archive name, the format, the compression level and, for .9z, the recovery data.</li>
+                <li>Click <strong>OK</strong>.</li>
+              </ol>
+              <p><strong>Compression level:</strong> Store packs without compressing; Ultra gives the smallest archive but takes longest. Normal is a good balance.</p>
+              <p><strong>CPU threads:</strong> more threads pack faster on modern processors.</p>
+              <p>If an archive with the same name already exists, 9-zip asks before replacing it.</p>
+            </section>
+            <section data-page="extract">
+              <h1>Extracting and testing</h1>
+              <p><strong>Extract:</strong> select an archive (or open it), click <strong>Extract</strong>, choose a folder and click OK. Tick <em>Overwrite existing files</em> only when you want files with the same names replaced.</p>
+              <p><strong>Extract only some files:</strong> open the archive, select the files and press F5 (Copy), or drag them into File Explorer.</p>
+              <p><strong>Test:</strong> select or open an archive and click <strong>Test</strong>. 9-zip reads every file to the end and checks it, without writing anything. "There are no errors" means every check passed.</p>
+              <p>How well damage is found depends on the format: .9z checks every file and every block, ZIP and 7Z check every file, and plain TAR and BROTLI have no checksums at all.</p>
+            </section>
+            <section data-page="explorer">
+              <h1>Explorer right-click menu</h1>
+              <p>Right-click files or folders in File Explorer and open the <strong>9-zip</strong> submenu:</p>
+              <ul>
+                <li><strong>Add to archive...</strong> opens the Add to Archive window.</li>
+                <li><strong>Add to "name.9z"</strong> and <strong>Add to "name.zip"</strong> pack straight away, next to the selected items.</li>
+                <li><strong>Extract here</strong>, <strong>Extract to "name\"</strong> and <strong>Test archive</strong> appear on archives.</li>
+              </ul>
+              <p>Only the needed window appears, and 9-zip closes when it has finished. Existing files are never replaced by Extract here.</p>
+              <p>Double-clicking a .9z file opens it in 9-zip.</p>
+            </section>
+            <section data-page="nine-z">
+              <h1>The .9z format</h1>
+              <p>.9z is the archive format of 9-zip. It brings three features together.</p>
+              <h2>Self-healing</h2>
+              <p>A .9z archive carries Reed-Solomon recovery data. When parts of the archive are damaged, for example by bad disk sectors or a broken download, 9-zip rebuilds them automatically while extracting. Test reports how many damaged blocks it found and can rebuild.</p>
+              <p>You choose the amount of recovery data in the Add to Archive window:</p>
+              <ul>
+                <li><strong>Low:</strong> 5% extra size</li>
+                <li><strong>Normal:</strong> 10% extra size (recommended)</li>
+                <li><strong>High:</strong> 20% extra size, for the strongest repair</li>
+              </ul>
+              <p>Recovery blocks are spread out, so even one long damaged stretch can be repaired: up to about 1 MB in every 10 MB at Normal. The archive header and its block list are each stored twice.</p>
+              <h2>Smart-adaptive compression</h2>
+              <p>Text, code and documents are packed together with LZMA2, the method 7z uses, for a small archive. Photos, videos and other files that are already compressed are stored as they are, so no time is spent trying to shrink them.</p>
+              <h2>VSA Integrity Seal</h2>
+              <p>Every file in a .9z archive carries a SHA-256 fingerprint. Testing or extracting checks every file against it, so damage never goes unnoticed.</p>
+              <p>People you send a .9z archive to need 9-zip to open it. Use ZIP when the other person may not have 9-zip.</p>
+            </section>
+            <section data-page="passwords">
+              <h1>Passwords and encryption</h1>
+              <p>ZIP and 7Z archives can be protected with AES-256. In the Add to Archive window, type the password twice, or tick <em>Show password</em> to type it once while seeing it.</p>
+              <ul>
+                <li><strong>ZIP:</strong> the contents are encrypted, but the list of file names stays visible. This is how ZIP works in every program.</li>
+                <li><strong>7Z:</strong> tick <em>Encrypt file names</em> to hide the list as well.</li>
+              </ul>
+              <p>When an archive needs a password, 9-zip asks for it and remembers it until you close 9-zip.</p>
+              <p><strong>Keep your password safe:</strong> nobody, including the makers of 9-zip, can recover files from an archive whose password is lost.</p>
+              <p>.9z and the TAR-based formats do not offer encryption.</p>
+            </section>
+            <section data-page="formats">
+              <h1>Supported formats</h1>
+              <p>9-zip creates, opens, tests and extracts:</p>
+              <table class="help-keys">
+                <tr><td>9Z</td><td>.9z</td><td>Self-healing, smart-adaptive LZMA2</td></tr>
+                <tr><td>7Z</td><td>.7z</td><td>LZMA2, optional AES-256</td></tr>
+                <tr><td>ZIP</td><td>.zip</td><td>Deflate, optional AES-256</td></tr>
+                <tr><td>TAR</td><td>.tar</td><td>Container without compression</td></tr>
+                <tr><td>GZIP</td><td>.tar.gz</td><td>Deflate</td></tr>
+                <tr><td>BZIP2</td><td>.tar.bz2</td><td>Burrows-Wheeler</td></tr>
+                <tr><td>XZ</td><td>.tar.xz</td><td>LZMA2</td></tr>
+                <tr><td>ZSTD</td><td>.tar.zst</td><td>Zstandard</td></tr>
+                <tr><td>LZ4</td><td>.tar.lz4</td><td>LZ4, very fast</td></tr>
+                <tr><td>BROTLI</td><td>.tar.br</td><td>Brotli</td></tr>
+              </table>
+            </section>
+            <section data-page="faq">
+              <h1>Frequently asked questions</h1>
+              <p><strong>Why is a .9z archive a little larger than a .7z archive?</strong><br />Because it carries recovery data (5%, 10% or 20%). That extra data is what lets 9-zip repair damage. Choose Low for the smallest archive.</p>
+              <p><strong>Can other programs open .9z?</strong><br />No. Recipients need 9-zip, which is free. For people without 9-zip, use ZIP.</p>
+              <p><strong>Does 9-zip collect any data?</strong><br />No. 9-zip does not connect to the internet and collects nothing.</p>
+              <p><strong>9-zip says an archive is damaged too badly to repair.</strong><br />More blocks were damaged than its recovery data can rebuild. Files in undamaged parts can usually still be extracted by selecting them.</p>
+              <p><strong>Where can I get help?</strong><br />Email <a href="#" class="external-link" data-url="mailto:softinquiry@vsa.edu.in">softinquiry@vsa.edu.in</a>.</p>
+            </section>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Enter password (shown above any other window) -->
+    <div id="modal-password" class="modal-backdrop modal-top hidden">
+      <div class="modal-window">
+        <div class="modal-title-bar">
+          <span>Enter password</span>
+          <button class="modal-x" id="btn-password-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <p class="password-archive" id="password-archive"></p>
+          <p class="password-wrong hidden" id="password-wrong">The password is wrong. Please try again.</p>
+          <div class="form-group">
+            <label for="password-input">Enter password:</label>
+            <input type="password" id="password-input" class="m-input" autocomplete="off" />
+          </div>
+          <div class="check-row">
+            <label><input type="checkbox" id="password-show" /> Show password</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-password-ok" class="btn-dialog-ok">OK</button>
+          <button id="btn-password-cancel" class="btn-dialog-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

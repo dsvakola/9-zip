@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy these three values from Partner Center > your app > Product management > Product identity. Until then the placeholders below are used, which are fine for local testing only.",
+  "identityName": "VidyasagarAcademy.9-zip",
+  "publisher": "CN=00000000-0000-0000-0000-000000000000",
+  "publisherDisplayName": "Vidyasagar Academy"
+}

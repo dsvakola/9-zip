@@ -1,0 +1,32 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main window: native dialogs, and opening only the 9-zip website and support email",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://vsa.edu.in/*"
+        },
+        {
+          "url": "mailto:softinquiry@vsa.edu.in"
+        }
+      ]
+    },
+    "core:window:allow-show",
+    "core:window:allow-set-size",
+    "core:window:allow-center",
+    "core:window:allow-set-title",
+    "core:window:allow-set-focus",
+    "core:window:allow-close",
+    "core:window:allow-set-resizable",
+    "core:window:allow-set-maximizable",
+    "core:window:allow-set-minimizable"
+  ]
+}
