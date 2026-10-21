@@ -246,6 +246,11 @@ pub async fn transfer_items(
 }
 
 #[tauri::command]
+pub fn get_start_folder() -> Option<String> {
+    file_ops::shortcut_folder()
+}
+
+#[tauri::command]
 pub fn get_known_folders() -> file_ops::KnownFolders {
     file_ops::known_folders()
 }

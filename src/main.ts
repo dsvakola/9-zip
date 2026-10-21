@@ -29,6 +29,7 @@ import {
   startDragOut,
   pathExists,
   archiveProperties,
+  getStartFolder,
   type ArchiveInfo,
   type KnownFolders,
   registerShellMenu,
@@ -273,7 +274,14 @@ async function initApp() {
     console.warn("No launch action:", err);
   }
 
-  // Default start
+  // Default start: the folder of the shortcut that opened 9-zip (a shortcut
+  // on the Desktop shows the Desktop), otherwise the first drive.
+  try {
+    const startFolder = await getStartFolder();
+    if (startFolder) currentPath = startFolder;
+  } catch {
+    // Keep the drive.
+  }
   await getCurrentWindow().show();
   clearTimeout(safety);
   await navigateTo(currentPath);
@@ -322,12 +330,26 @@ async function showAsDialog(modal: HTMLElement, title: string) {
   await win.setMinimizable(false);
   if (box) {
     const rect = box.getBoundingClientRect();
-    await win.setSize(new LogicalSize(Math.ceil(rect.width), Math.ceil(rect.height)));
+    // A dialog that closed straight away (after an error) has no size.
+    if (rect.width > 0 && rect.height > 0) {
+      await win.setSize(new LogicalSize(Math.ceil(rect.width), Math.ceil(rect.height)));
+    }
+    // Whenever the dialog grows or shrinks (for example the .9z notice
+    // appears or disappears with the format), the window follows it.
+    dialogResizeWatch?.disconnect();
+    dialogResizeWatch = new ResizeObserver(() => {
+      const now = box.getBoundingClientRect();
+      if (now.width > 0 && now.height > 0) {
+        win.setSize(new LogicalSize(Math.ceil(now.width), Math.ceil(now.height)));
+      }
+    });
+    dialogResizeWatch.observe(box);
   }
   await win.center();
   await win.show();
   await win.setFocus();
 }
+let dialogResizeWatch: ResizeObserver | null = null;
 
 async function closeDialogWindow() {
   if (!dialogMode) return;
@@ -1526,8 +1548,9 @@ function updatePasswordAvailability() {
     box.placeholder = supported ? "" : "Not available";
   }
   compressShowPassword.disabled = !supported;
-  // ZIP always shows file names; only 7z can hide them.
+  // ZIP always shows file names; only 7z can hide them (ticked by default).
   compressEncryptNames.disabled = selectFormat.value !== "7z";
+  compressEncryptNames.checked = selectFormat.value === "7z";
   encryptionGroup.classList.toggle("unavailable", !supported);
   encryptionLegend.textContent = supported
     ? "Encryption (AES-256)"

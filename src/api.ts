@@ -414,3 +414,8 @@ export interface ArchiveInfo {
 export async function archiveProperties(path: string, password?: string): Promise<ArchiveInfo> {
   return await invoke<ArchiveInfo>("archive_properties", { path, password });
 }
+
+/** The folder of the shortcut that started 9-zip, if any. */
+export async function getStartFolder(): Promise<string | null> {
+  return await invoke<string | null>("get_start_folder");
+}

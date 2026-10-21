@@ -105,19 +105,46 @@ pub(crate) fn open_tar_stream<'a>(
     })
 }
 
+/// Joins an archive path onto the destination, refusing anything that could
+/// escape it: "..", absolute paths and drive letters such as "C:".
 pub(crate) fn safe_join(base: &Path, rel: &str) -> Result<PathBuf, AppError> {
+    use std::path::Component;
     let clean_rel = rel.replace('\\', "/");
     let mut target = base.to_path_buf();
-    for part in clean_rel.split('/') {
-        if part.is_empty() || part == "." {
-            continue;
+    for part in Path::new(&clean_rel).components() {
+        match part {
+            Component::Normal(p) => target.push(p),
+            Component::CurDir => {}
+            _ => {
+                return Err(AppError::new(format!(
+                    "Security warning: blocked unsafe path in archive: {}",
+                    rel
+                )));
+            }
         }
-        if part == ".." {
-            return Err(AppError::new("Illegal path traversal detected in archive"));
-        }
-        target.push(part);
     }
     Ok(target)
+}
+
+/// Writes one extracted file to "<name>.9z-part" first and renames it into
+/// place only when it is complete, so a damaged file never leaves a broken,
+/// half-written file behind.
+fn write_file(target: &Path, data: &mut dyn Read) -> Result<u64, AppError> {
+    let mut name = target.file_name().unwrap_or_default().to_os_string();
+    name.push(".9z-part");
+    let temp = target.with_file_name(name);
+    let result = (|| -> Result<u64, AppError> {
+        let mut out = std::io::BufWriter::new(File::create(&temp)?);
+        let written = std::io::copy(data, &mut out)?;
+        std::io::Write::flush(&mut out)?;
+        drop(out);
+        fs::rename(&temp, target)?;
+        Ok(written)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result
 }
 
 fn extract_zip(
@@ -132,6 +159,7 @@ fn extract_zip(
     let start_time = Instant::now();
     let mut last_emit = Instant::now();
     let mut bytes_processed = 0u64;
+    let mut damaged: Vec<String> = Vec::new();
 
     for i in 0..total_files {
         if TaskManager::is_cancelled(cancel_flag) {
@@ -158,9 +186,11 @@ fn extract_zip(
             if target_path.exists() && !options.overwrite {
                 continue;
             }
-            let mut out_file = File::create(&target_path)?;
-            let copied = std::io::copy(&mut entry, &mut out_file)?;
-            bytes_processed += copied;
+            // A damaged file is listed, and the others still come out.
+            match write_file(&target_path, &mut entry) {
+                Ok(copied) => bytes_processed += copied,
+                Err(_) => damaged.push(raw_name.clone()),
+            }
         }
 
         if last_emit.elapsed().as_millis() >= 100 || i == total_files - 1 {
@@ -183,7 +213,11 @@ fn extract_zip(
         }
     }
 
-    Ok(())
+    if damaged.is_empty() {
+        Ok(())
+    } else {
+        Err(AppError::partly_damaged(&damaged))
+    }
 }
 
 fn extract_7z(
@@ -200,6 +234,8 @@ fn extract_7z(
     let mut count = 0usize;
     // Errors from inside the callback, kept with their own message.
     let mut failure: Option<AppError> = None;
+    let mut damaged: Vec<String> = Vec::new();
+    let mut extracted = 0usize;
 
     let result = reader.for_each_entries(|entry, data| {
         if TaskManager::is_cancelled(cancel_flag) {
@@ -224,8 +260,14 @@ fn extract_7z(
                 std::io::copy(data, &mut std::io::sink())?;
                 return Ok(());
             }
-            let mut out = File::create(&target_path)?;
-            bytes_processed += std::io::copy(data, &mut out)?;
+            match write_file(&target_path, data) {
+                Ok(copied) => {
+                    bytes_processed += copied;
+                    extracted += 1;
+                }
+                // A damaged file is listed, and the others still come out.
+                Err(_) => damaged.push(entry.name().to_string()),
+            }
             Ok(())
         })();
         if let Err(e) = step {
@@ -252,14 +294,20 @@ fn extract_7z(
         Ok(true)
     });
 
+    // With a wrong password, AES gives garbage that the decoder rejects.
+    let with_password = options.password.as_deref().is_some_and(|p| !p.is_empty());
     if let Some(e) = failure {
-        // With a wrong password, AES gives garbage that the decoder rejects.
-        let with_password = options.password.as_deref().is_some_and(|p| !p.is_empty());
-        let cancelled = e.message.contains("cancelled");
-        return Err(if with_password && e.code.is_none() && !cancelled {
+        return Err(if with_password && e.code.is_none() && !e.is_cancel() {
             AppError::wrong_password()
         } else {
             e
+        });
+    }
+    if !damaged.is_empty() {
+        return Err(if with_password && extracted == 0 {
+            AppError::wrong_password()
+        } else {
+            AppError::partly_damaged(&damaged)
         });
     }
     result.map_err(AppError::from)
@@ -310,9 +358,17 @@ fn extract_tar<R: Read>(
             if target_path.exists() && !options.overwrite {
                 continue;
             }
-            let mut out = File::create(&target_path)?;
-            let copied = std::io::copy(&mut entry, &mut out)?;
-            bytes_processed += copied;
+            // In a compressed TAR, nothing after damaged data can be trusted.
+            match write_file(&target_path, &mut entry) {
+                Ok(copied) => bytes_processed += copied,
+                Err(_) => {
+                    return Err(AppError::new(format!(
+                        "{} is damaged, so it and the files after it could not be extracted. \
+                         The files before it were extracted.",
+                        path
+                    )));
+                }
+            }
         }
 
         count += 1;

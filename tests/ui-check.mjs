@@ -62,10 +62,12 @@ const mockBackend = (launch, settings = {}) => `
         case "archive_properties": return { path: "C:\\\\Archives\\\\x.9z", kind: "9z", physicalSize: 12000, size: 9150, packedSize: 9100, files: 3, folders: 2, method: "LZMA2:8m (solid) + Stored", solid: true, blocks: 1, headersSize: 300, encrypted: false, nineZ: { formatVersion: 3, recoveryPercent: 10, recoverySize: 910, dataBlocks: 40, recoveryBlocks: 4, blockSize: 16384, solidBlocks: 1, solidFiles: 2, storedFiles: 1, sealedFiles: 3, headersSize: 300, dictionary: 8388608, createdBy: "9-zip" } };
         case "get_launch_action": return ${JSON.stringify(launch)};
         case "get_known_folders": return { desktop };
+        case "get_start_folder": return desktop;
         case "get_favorites": return [];
         case "get_settings": return ${JSON.stringify(settings)};
         case "is_packaged": return false;
         case "path_exists": return false;
+        case "calculate_hashes": return { path: desktop + "\\notes.txt", fileName: "notes.txt", fileSize: 1200, crc32: "1A2B3C4D", md5: "0123456789abcdef0123456789abcdef", sha1: "0123456789abcdef0123456789abcdef01234567", sha256: "0123456789abcdef".repeat(4) };
         case "plugin:dialog|message": window.__MESSAGES__.push(args); return "Ok";
         case "plugin:dialog|ask": return true;
         case "compress_files": await new Promise((r) => setTimeout(r, 3000)); return null;
@@ -119,6 +121,8 @@ async function dialogFits(page, modalId) {
   errors.length ? errors.forEach((e) => problem(`Script error at start: ${e}`)) : ok();
   const shown = await page.evaluate(() => window.__CALLS__.some((c) => c.cmd === "plugin:window|show"));
   shown ? ok() : problem("The window is never shown at start (it starts hidden).");
+  const address = await page.inputValue("#input-path");
+  address.includes("Desktop") ? ok() : problem(`Started from a Desktop shortcut, the window shows "${address}" instead of the Desktop.`);
   const rows = await page.locator("#grid-body tr").count();
   rows === 3 ? ok() : problem(`The file list shows ${rows} rows instead of 3.`);
 
@@ -215,48 +219,72 @@ async function dialogFits(page, modalId) {
   await page.close();
 }
 
-// 5. Dialogs started from Explorer fill their window exactly.
-for (const [action, modalId] of [
-  ["add", "modal-compress"],
-  ["quick_9z", "modal-progress"],
-]) {
-  const target = "C:\\Users\\Test\\Desktop\\notes.txt";
-  const { page, errors } = await openWindow({ action, targetPath: target, targetPaths: [target] });
-  errors.length ? errors.forEach((e) => problem(`Explorer "${action}": script error: ${e}`)) : ok();
+// 5. Dialogs started from Explorer fill their window exactly, also after
+//    anything inside them changes (format, password boxes, ...).
+async function checkWindowFits(page, modalId, label) {
   const calls = await page.evaluate(() => window.__CALLS__);
   const sizes = calls.filter((c) => c.cmd === "plugin:window|set_size");
   if (!sizes.length) {
-    problem(`Explorer "${action}": the window is never sized to the dialog.`);
-  } else {
-    const text = JSON.stringify(sizes[sizes.length - 1].args);
-    const width = Number(text.match(/"width":([\d.]+)/)?.[1]);
-    const height = Number(text.match(/"height":([\d.]+)/)?.[1]);
-    // Look at the page at exactly that size, as Windows will show it.
-    await page.setViewportSize({ width: Math.round(width), height: Math.round(height) });
-    await page.waitForTimeout(150);
-    const fit = await page.evaluate((id) => {
-      const box = document.getElementById(id).querySelector(".modal-window").getBoundingClientRect();
-      const content = document.getElementById(id).querySelector(".modal-content");
-      return {
-        gapRight: Math.round(innerWidth - box.right),
-        gapBottom: Math.round(innerHeight - box.bottom),
-        scrolls: content ? content.scrollHeight > content.clientHeight + 1 : false,
-        pageScrolls: document.documentElement.scrollHeight > innerHeight + 1,
-        mainHidden: getComputedStyle(document.getElementById("app")).display === "none",
-      };
-    }, modalId);
-    Math.abs(fit.gapRight) <= 1 && Math.abs(fit.gapBottom) <= 1
+    problem(`${label}: the window is never sized to the dialog.`);
+    return;
+  }
+  const text = JSON.stringify(sizes[sizes.length - 1].args);
+  const width = Number(text.match(/"width":([\d.]+)/)?.[1]);
+  const height = Number(text.match(/"height":([\d.]+)/)?.[1]);
+  // Look at the page at exactly that size, as Windows will show it.
+  await page.setViewportSize({ width: Math.round(width), height: Math.round(height) });
+  await page.waitForTimeout(150);
+  const fit = await page.evaluate((id) => {
+    const box = document.getElementById(id).querySelector(".modal-window").getBoundingClientRect();
+    const content = document.getElementById(id).querySelector(".modal-content");
+    return {
+      gapRight: Math.round(innerWidth - box.right),
+      gapBottom: Math.round(innerHeight - box.bottom),
+      clipped: [...document.getElementById(id).querySelectorAll("button, input, select, td, label, span")]
+        .filter((el) => el.offsetParent && el.getBoundingClientRect().right > box.right + 1)
+        .map((el) => (el.textContent || el.id || el.tagName).trim().slice(0, 30)),
+      scrolls: content ? content.scrollHeight > content.clientHeight + 1 : false,
+      pageScrolls: document.documentElement.scrollHeight > innerHeight + 1,
+      mainHidden: getComputedStyle(document.getElementById("app")).display === "none",
+    };
+  }, modalId);
+  Math.abs(fit.gapRight) <= 1 && Math.abs(fit.gapBottom) <= 1
+    ? ok()
+    : problem(`${label}: ${fit.gapRight}px of empty space on the right and ${fit.gapBottom}px at the bottom.`);
+  fit.scrolls || fit.pageScrolls ? problem(`${label}: the dialog shows a scroll bar.`) : ok();
+  fit.clipped.length ? problem(`${label}: these stick out of the dialog and are cut off: ${fit.clipped.join(", ")}`) : ok();
+  fit.mainHidden ? ok() : problem(`${label}: the main window shows behind the dialog.`);
+  // Optional pictures at the real window size: UI_SHOTS=<folder> npm run check:ui
+  if (process.env.UI_SHOTS) {
+    await page.screenshot({ path: join(process.env.UI_SHOTS, label.replace(/[^a-z0-9]+/gi, "-") + ".png") });
+  }
+  // Give the window back its room before the next change.
+  await page.setViewportSize({ width: 1000, height: 900 });
+}
+
+for (const [action, modalId] of [
+  ["add", "modal-compress"],
+  ["quick_9z", "modal-progress"],
+  ["hash", "modal-hash"],
+]) {
+  const target = "C:\\Users\\Test\\Desktop\\notes.txt";
+  const { page, errors } = await openWindow({ action, targetPath: target, targetPaths: [target] }, { width: 1000, height: 900 });
+  errors.length ? errors.forEach((e) => problem(`Explorer "${action}": script error: ${e}`)) : ok();
+  await checkWindowFits(page, modalId, `Explorer "${action}"`);
+  const calls = await page.evaluate(() => window.__CALLS__);
+  for (const flag of ["set_resizable", "set_maximizable"]) {
+    const call = calls.find((c) => c.cmd === `plugin:window|${flag}`);
+    call && JSON.stringify(call.args).includes("false")
       ? ok()
-      : problem(`Explorer "${action}": ${fit.gapRight}px of empty space on the right and ${fit.gapBottom}px at the bottom.`);
-    fit.scrolls || fit.pageScrolls ? problem(`Explorer "${action}": the dialog shows a scroll bar.`) : ok();
-    fit.mainHidden ? ok() : problem(`Explorer "${action}": the main window shows behind the dialog.`);
-    // Optional pictures for a human check: UI_SHOTS=<folder> npm run check:ui
-    if (process.env.UI_SHOTS) await page.screenshot({ path: join(process.env.UI_SHOTS, `explorer-${action}.png`) });
-    for (const flag of ["set_resizable", "set_maximizable"]) {
-      const call = calls.find((c) => c.cmd === `plugin:window|${flag}`);
-      call && JSON.stringify(call.args).includes("false")
-        ? ok()
-        : problem(`Explorer "${action}": the dialog window can still be ${flag === "set_resizable" ? "resized" : "maximised"}.`);
+      : problem(`Explorer "${action}": the dialog window can still be ${flag === "set_resizable" ? "resized" : "maximised"}.`);
+  }
+  if (action === "add") {
+    // Every format, then back to 9z: the window must follow the dialog.
+    const formats = await page.$$eval("#select-format option", (o) => o.map((x) => x.value));
+    for (const format of [...formats.filter((f) => f !== "9z"), "9z"]) {
+      await page.selectOption("#select-format", format);
+      await page.waitForTimeout(150);
+      await checkWindowFits(page, modalId, `Explorer "add", format ${format}`);
     }
   }
   await page.close();

@@ -33,6 +33,34 @@ impl AppError {
         }
     }
 
+    /// Some files could not be extracted because they are damaged; all the
+    /// others were. `names` lists the damaged ones.
+    pub fn partly_damaged(names: &[String]) -> Self {
+        let shown: Vec<String> = names
+            .iter()
+            .take(10)
+            .map(|n| format!("  - {}", n))
+            .collect();
+        let more = if names.len() > 10 {
+            format!("\n  ...and {} more", names.len() - 10)
+        } else {
+            String::new()
+        };
+        Self {
+            message: format!(
+                "{} file(s) are damaged and were not extracted:\n{}{}\n\nAll other files were extracted.",
+                names.len(),
+                shown.join("\n"),
+                more
+            ),
+            code: Some("partly_damaged"),
+        }
+    }
+
+    pub fn is_cancel(&self) -> bool {
+        self.message.contains("cancelled")
+    }
+
     pub fn wrong_password() -> Self {
         Self {
             message: "The password is wrong, or the archive is damaged.".to_string(),

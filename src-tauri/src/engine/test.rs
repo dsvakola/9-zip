@@ -500,6 +500,49 @@ mod tests {
         }
     }
 
+    /// The Professor's test: a ZIP with one damaged file. The other files
+    /// come out complete, and no half-written file is left behind.
+    #[test]
+    fn damaged_zip_extracts_the_good_files() {
+        let dir = TempDir(std::env::temp_dir().join("9z_test_cmd_damaged_zip"));
+        let _ = fs::remove_dir_all(&dir.0);
+        let archive = build(&dir.0, CompressionFormat::Zip, "t.zip");
+        let mut zip = ZipArchive::new(File::open(&archive).expect("open")).expect("zip");
+        let a = (0..zip.len())
+            .find(|&i| zip.by_index_raw(i).expect("entry").name().ends_with("a.txt"))
+            .expect("a.txt");
+        let at = zip.by_index_raw(a).expect("entry").data_start() as usize + 4;
+        drop(zip);
+        let mut bytes = fs::read(&archive).expect("read");
+        for b in &mut bytes[at..at + 64] {
+            *b = !*b;
+        }
+        fs::write(&archive, bytes).expect("write");
+
+        let out = dir.0.join("out");
+        let err = crate::engine::extract::extract_archive(
+            crate::models::ExtractOptions {
+                archive_path: archive.to_string_lossy().to_string(),
+                destination: out.to_string_lossy().to_string(),
+                password: None,
+                overwrite: true,
+                task_id: "damaged_zip".to_string(),
+                entries: None,
+            },
+            Arc::new(AtomicBool::new(false)),
+            &channel(),
+        )
+        .expect_err("must report the damage");
+        assert_eq!(err.code, Some("partly_damaged"), "message: {}", err.message);
+        assert!(err.message.contains("a.txt"));
+        assert_eq!(
+            fs::read_to_string(out.join("src").join("sub").join("b.txt")).expect("b.txt"),
+            "beta line\n".repeat(3000)
+        );
+        assert!(!out.join("src").join("a.txt").exists(), "no broken file is left");
+        assert!(!out.join("src").join("a.txt.9z-part").exists(), "no temporary file is left");
+    }
+
     #[test]
     fn damage_is_reported_for_checksummed_formats() {
         let dir = TempDir(std::env::temp_dir().join("9z_test_cmd_bad"));

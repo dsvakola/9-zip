@@ -1094,3 +1094,18 @@ body.dialog-mode .modal-title-bar {
 .grid-table th:last-child .col-resizer {
   right: 0;
 }
+
+/* Checksum labels stay on one line ("SHA-256", not "SHA-" / "256"). */
+.hash-table th,
+.hash-table td:first-child {
+  white-space: nowrap;
+}
+
+/* SHA-256 is 64 characters: the Checksum dialog needs the room. */
+.modal-window.hash-window {
+  max-width: 620px;
+}
+
+body.dialog-mode .modal-window.hash-window {
+  width: 620px;
+}

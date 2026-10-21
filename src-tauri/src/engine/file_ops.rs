@@ -250,6 +250,41 @@ pub fn save_settings(
     Ok(())
 }
 
+/// The folder of the shortcut that started 9-zip, if a shortcut did, so the
+/// window opens there (a 9-zip shortcut on the Desktop shows the Desktop).
+/// Start menu and taskbar shortcuts are ignored: their folder means nothing
+/// to the user.
+pub fn shortcut_folder() -> Option<String> {
+    use windows::Win32::System::Threading::{
+        GetStartupInfoW, STARTF_TITLEISLINKNAME, STARTUPINFOW,
+    };
+    let mut info = STARTUPINFOW {
+        cb: std::mem::size_of::<STARTUPINFOW>() as u32,
+        ..Default::default()
+    };
+    unsafe { GetStartupInfoW(&mut info) };
+    if !info.dwFlags.contains(STARTF_TITLEISLINKNAME) || info.lpTitle.is_null() {
+        return None;
+    }
+    let link = unsafe { info.lpTitle.to_string() }.ok()?;
+    folder_for_shortcut(&link)
+}
+
+fn folder_for_shortcut(link: &str) -> Option<String> {
+    let lower = link.to_lowercase();
+    let menus = [
+        "\\microsoft\\windows\\start menu\\",
+        "\\microsoft\\internet explorer\\quick launch\\",
+    ];
+    if menus.iter().any(|m| lower.contains(m)) {
+        return None;
+    }
+    let folder = Path::new(link).parent()?;
+    folder
+        .is_dir()
+        .then(|| folder.to_string_lossy().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,6 +382,28 @@ mod tests {
         let loaded = load_settings(&file);
         assert_eq!(loaded["columnWidths"]["name"], 300);
         assert_eq!(loaded["other"], true);
+    }
+
+    #[test]
+    fn start_folder_comes_from_ordinary_shortcuts_only() {
+        let tmp = TempDir::new("shortcut");
+        let link = tmp.0.join("9-zip.lnk");
+        assert_eq!(
+            folder_for_shortcut(&link.to_string_lossy()),
+            Some(tmp.0.to_string_lossy().to_string())
+        );
+        assert_eq!(
+            folder_for_shortcut(
+                "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\9-zip.lnk"
+            ),
+            None
+        );
+        assert_eq!(
+            folder_for_shortcut(
+                "C:\\Users\\A\\AppData\\Roaming\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar\\9-zip.lnk"
+            ),
+            None
+        );
     }
 
     #[test]

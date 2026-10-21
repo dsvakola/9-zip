@@ -1288,6 +1288,8 @@ struct Unpacker<'a, 'b> {
     meter: Meter<'a>,
     chunk: Vec<u8>,
     files_verified: usize,
+    /// Files that could not be restored; the others still come out.
+    damaged: Vec<String>,
 }
 
 impl Unpacker<'_, '_> {
@@ -1427,7 +1429,12 @@ fn unpack_all(
                 ))),
             }
         };
-        result.map_err(|e| reader.explain(e))?;
+        if let Err(e) = result.map_err(|e| reader.explain(e)) {
+            if e.is_cancel() {
+                return Err(e);
+            }
+            unpacker.damaged.push(entry.path.clone());
+        }
         unpacker.meter.file_done(&entry.path);
     }
 
@@ -1455,6 +1462,7 @@ fn unpack_all(
         }
 
         reader.pos = block.offset;
+        let mut done = 0usize;
         let result = (|| -> Result<(), AppError> {
             let limited = (&mut *reader).take(block.packed_size);
             let mut source: Box<dyn Read + '_> = if threads > 1 {
@@ -1483,13 +1491,29 @@ fn unpack_all(
                     )?;
                 }
                 position += entry.uncompressed_size;
+                done += 1;
                 unpacker.meter.file_done(&entry.path);
             }
             Ok(())
         })();
-        result.map_err(|e| reader.explain(e))?;
+        // Beyond repair: this block's remaining files are lost, but the
+        // other blocks may be fine.
+        if let Err(e) = result.map_err(|e| reader.explain(e)) {
+            if e.is_cancel() {
+                return Err(e);
+            }
+            for entry in &members[done..] {
+                if unpacker.wants(entry) {
+                    unpacker.damaged.push(entry.path.clone());
+                }
+            }
+        }
     }
-    Ok(())
+    if unpacker.damaged.is_empty() {
+        Ok(())
+    } else {
+        Err(AppError::partly_damaged(&unpacker.damaged))
+    }
 }
 
 fn total_size(manifest: &NineZManifest) -> u64 {
@@ -1534,6 +1558,7 @@ pub fn extract_nine_z(
         ),
         chunk: vec![0u8; COPY_CHUNK],
         files_verified: 0,
+        damaged: Vec::new(),
     };
     unpack_all(&mut reader, &manifest, &mut unpacker, MAX_THREADS.min(4))?;
 
@@ -1574,6 +1599,7 @@ pub fn test_nine_z(
         ),
         chunk: vec![0u8; COPY_CHUNK],
         files_verified: 0,
+        damaged: Vec::new(),
     };
     unpack_all(&mut reader, &manifest, &mut unpacker, MAX_THREADS.min(4))?;
     reader.health.files_verified = unpacker.files_verified;
@@ -1972,19 +1998,25 @@ mod tests {
     #[test]
     fn reports_damage_beyond_repair_clearly() {
         let tmp = TempDir::new("beyond");
-        let (archive, _src) = make_archive(&tmp.0, RecoveryLevel::Low);
+        let (archive, src) = make_archive(&tmp.0, RecoveryLevel::Low);
         let l = layout(&archive);
 
+        // Three bad blocks in one stripe at the start, inside random.bin:
+        // more than Low (2) can rebuild.
         for shard in [0, 4, 8] {
             damage(&archive, shard_offset(&l, 0, 1, shard), 16);
         }
 
-        let err = extract_to(&archive, &tmp.0.join("out")).expect_err("must fail");
-        assert!(
-            err.message.contains("at most 2 can be rebuilt"),
-            "unexpected message: {}",
-            err.message
+        let out = tmp.0.join("out");
+        let err = extract_to(&archive, &out).expect_err("must report the damage");
+        assert_eq!(err.code, Some("partly_damaged"), "message: {}", err.message);
+        assert!(err.message.contains("random.bin"), "message: {}", err.message);
+        // Like 7-Zip, the undamaged files still come out, complete.
+        assert_eq!(
+            fs::read(out.join("src").join("notes.txt")).expect("notes.txt extracted"),
+            fs::read(src.join("notes.txt")).expect("source")
         );
+        assert!(!out.join("src").join("random.bin").exists(), "no broken file is left");
         let leftovers: Vec<_> = walkdir::WalkDir::new(tmp.0.join("out"))
             .into_iter()
             .filter_map(|e| e.ok())

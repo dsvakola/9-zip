@@ -58,6 +58,7 @@ pub fn run() {
             commands::show_properties,
             commands::transfer_items,
             commands::get_known_folders,
+            commands::get_start_folder,
             commands::get_favorites,
             commands::set_favorites,
             commands::get_settings,
