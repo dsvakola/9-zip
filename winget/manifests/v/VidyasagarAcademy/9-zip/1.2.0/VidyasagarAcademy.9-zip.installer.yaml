@@ -1,0 +1,19 @@
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: VidyasagarAcademy.9-zip
+PackageVersion: 1.2.0
+InstallerType: nullsoft
+Scope: machine
+InstallModes:
+- interactive
+- silent
+UpgradeBehavior: install
+ReleaseDate: 2026-10-23
+Dependencies:
+  PackageDependencies:
+  - PackageIdentifier: Microsoft.EdgeWebView2Runtime
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/dsvakola/9-zip/releases/download/v1.2.0/9-zip_1.2.0_x64-setup.exe
+  InstallerSha256: 53D1379337DBE103D9FB16D99AC6F9A27A71EDB55B8C2FB479186838FA301517
+ManifestType: installer
+ManifestVersion: 1.9.0
