@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "9-zip",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "identifier": "in.edu.vsa.ninezip",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -31,6 +31,9 @@
     "active": true,
     "targets": "all",
     "publisher": "Vidyasagar Academy",
+    "homepage": "https://github.com/dsvakola/software",
+    "license": "GPL-3.0-only",
+    "licenseFile": "../LICENSE",
     "copyright": "Copyright © 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar",
     "shortDescription": "9-zip - archive manager with the self-healing .9z format",
     "longDescription": "9-zip is a free archive manager for Windows. It creates 10 formats (9Z, 7Z, ZIP, TAR, GZIP, BZIP2, XZ, ZSTD, LZ4 and BROTLI), including the self-healing .9z format with built-in Reed-Solomon recovery data.",

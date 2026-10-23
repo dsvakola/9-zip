@@ -1107,7 +1107,7 @@ fn write_nine_z(
         version: "3.0".to_string(),
         creator: "9-zip".to_string(),
         organization: "Vidyasagar Academy".to_string(),
-        store_url: "https://vsa.edu.in/software/".to_string(),
+        store_url: "https://github.com/dsvakola/software".to_string(),
         data_shards: DATA_SHARDS,
         parity_shards,
         shard_size: SHARD_SIZE,
@@ -2010,13 +2010,20 @@ mod tests {
         let out = tmp.0.join("out");
         let err = extract_to(&archive, &out).expect_err("must report the damage");
         assert_eq!(err.code, Some("partly_damaged"), "message: {}", err.message);
-        assert!(err.message.contains("random.bin"), "message: {}", err.message);
+        assert!(
+            err.message.contains("random.bin"),
+            "message: {}",
+            err.message
+        );
         // Like 7-Zip, the undamaged files still come out, complete.
         assert_eq!(
             fs::read(out.join("src").join("notes.txt")).expect("notes.txt extracted"),
             fs::read(src.join("notes.txt")).expect("source")
         );
-        assert!(!out.join("src").join("random.bin").exists(), "no broken file is left");
+        assert!(
+            !out.join("src").join("random.bin").exists(),
+            "no broken file is left"
+        );
         let leftovers: Vec<_> = walkdir::WalkDir::new(tmp.0.join("out"))
             .into_iter()
             .filter_map(|e| e.ok())

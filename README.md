@@ -3,7 +3,9 @@
 **9-zip** is a free archive manager for Windows that works like 7-Zip and adds its own self-healing **.9z** format.
 
 Developed by **Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar**, for **Vidyasagar Academy**.
-Website: [https://vsa.edu.in/software/](https://vsa.edu.in/software/)
+Official Website: [https://vsa.edu.in/](https://vsa.edu.in/)  
+Software Catalog: [https://github.com/dsvakola/software](https://github.com/dsvakola/software)  
+Repository: [https://github.com/dsvakola/9-zip](https://github.com/dsvakola/9-zip)  
 Email: [softinquiry@vsa.edu.in](mailto:softinquiry@vsa.edu.in)
 
 ---
@@ -66,10 +68,14 @@ npx tauri build --bundles nsis
 Then copy the results into `Release/`:
 
 - `Release/9-zip.exe`: portable program
-- `Release/9-zip_1.0.0_x64-setup.exe`: installer
+- `Release/9-zip_1.2.0_x64-setup.exe`: installer
 
 ---
 
 ## Licence and copyright
 
-Copyright © 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar, for Vidyasagar Academy. All rights reserved.
+Copyright © 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar, for Vidyasagar Academy.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License** as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+See the [`LICENSE`](LICENSE) file for the full license text.

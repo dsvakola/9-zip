@@ -43,7 +43,7 @@ Use this stack for all new desktop software and for converting existing Electron
 ## 6. Packaging and branding
 - NSIS installer (with the WebView2 bootstrapper) plus a portable EXE (the release `.exe`). Add MSI only when asked.
 - The single source of the version number is `tauri.conf.json`. The About box reads it from Rust.
-- Use the Vidyasagar Robotics Academy details in the About box, installer, NOTICE and README: Developed by Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar, for Vidyasagar Robotics Academy · https://vsa.edu.in/software/ · softinquiry@vsa.edu.in · logo at E:\Claude\logo.png.
+- Use the Vidyasagar Academy details in the About box, installer, NOTICE and README: Developed by Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar, for Vidyasagar Academy · https://vsa.edu.in/software/ · softinquiry@vsa.edu.in · logo at E:\Claude\logo.png.
 
 ## 7. Release Folder
 - Always create folder named "Release" in the root of related software's or project's folder and build the .exe there only, instead of creating dist or dist-installer folders. I am much comfortable with "Release" name.

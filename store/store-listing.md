@@ -34,8 +34,8 @@ Upload `Release\9-zip_1.0.0.0_x64.msix`.
 ## 3. Properties
 
 - **Category:** Utilities & tools
-- **Privacy policy URL:** https://vsa.edu.in/software/9-zip/privacy (publish the text in section 7 there first)
-- **Website:** https://vsa.edu.in/software/
+- **Privacy policy URL:** https://github.com/dsvakola/software9-zip/privacy (publish the text in section 7 there first)
+- **Website:** https://github.com/dsvakola/software
 - **Support contact:** softinquiry@vsa.edu.in
 - **Product declarations:**
   - This app does not collect, store or transmit personal information: **yes**.
@@ -128,7 +128,7 @@ The package already contains every required tile and icon (`msix/Assets`). Partn
 
 ---
 
-## 7. Privacy policy (publish at https://vsa.edu.in/software/9-zip/privacy)
+## 7. Privacy policy (publish at https://github.com/dsvakola/software9-zip/privacy)
 
 **9-zip Privacy Policy**
 

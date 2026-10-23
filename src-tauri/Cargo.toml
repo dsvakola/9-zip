@@ -1,6 +1,9 @@
 [package]
 name = "nine_z"
-version = "1.0.0"
+version = "1.2.0"
+license = "GPL-3.0-only"
+homepage = "https://github.com/dsvakola/software"
+repository = "https://github.com/dsvakola/9-zip"
 description = "9-zip - Archive manager for Windows"
 authors = ["Prof. Dattaraj S. Vidyasagar", "Prof. Yash D. Vidyasagar"]
 edition = "2024"

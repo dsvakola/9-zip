@@ -509,7 +509,12 @@ mod tests {
         let archive = build(&dir.0, CompressionFormat::Zip, "t.zip");
         let mut zip = ZipArchive::new(File::open(&archive).expect("open")).expect("zip");
         let a = (0..zip.len())
-            .find(|&i| zip.by_index_raw(i).expect("entry").name().ends_with("a.txt"))
+            .find(|&i| {
+                zip.by_index_raw(i)
+                    .expect("entry")
+                    .name()
+                    .ends_with("a.txt")
+            })
             .expect("a.txt");
         let at = zip.by_index_raw(a).expect("entry").data_start() as usize + 4;
         drop(zip);
@@ -539,8 +544,14 @@ mod tests {
             fs::read_to_string(out.join("src").join("sub").join("b.txt")).expect("b.txt"),
             "beta line\n".repeat(3000)
         );
-        assert!(!out.join("src").join("a.txt").exists(), "no broken file is left");
-        assert!(!out.join("src").join("a.txt.9z-part").exists(), "no temporary file is left");
+        assert!(
+            !out.join("src").join("a.txt").exists(),
+            "no broken file is left"
+        );
+        assert!(
+            !out.join("src").join("a.txt.9z-part").exists(),
+            "no temporary file is left"
+        );
     }
 
     #[test]

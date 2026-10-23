@@ -1,3 +1,6 @@
+// 9-zip - Archive Manager for Windows
+// Copyright (C) 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar
+// Licensed under the GNU General Public License v3.0 (GPL-3.0-only).
 mod commands;
 mod engine;
 mod error;
