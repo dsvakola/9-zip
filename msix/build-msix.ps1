@@ -1,4 +1,4 @@
-# Builds Release\9-zip_<version>_x64.msix from the release build of 9-zip.
+# Builds Release\9-zip-Archiver_<version>_x64.msix from the release build of 9-zip.
 #   1. npx tauri build --bundles nsis   (makes src-tauri\target\release\9-zip.exe)
 #   2. powershell -ExecutionPolicy Bypass -File msix\build-msix.ps1
 # The package is unsigned: the Microsoft Store signs it on submission.
@@ -41,7 +41,8 @@ $manifest = (Get-Content "$PSScriptRoot\AppxManifest.template.xml" -Raw).
     Replace("{{IDENTITY_NAME}}", $identity.identityName).
     Replace("{{PUBLISHER}}", $identity.publisher).
     Replace("{{PUBLISHER_DISPLAY_NAME}}", $identity.publisherDisplayName).
-    Replace("{{VERSION}}", $version)
+    Replace("{{VERSION}}", $version).
+    Replace("{{STORE_DISPLAY_NAME}}", $identity.storeDisplayName)
 [IO.File]::WriteAllText("$stage\AppxManifest.xml", $manifest, (New-Object Text.UTF8Encoding $false))
 
 # resources.pri maps the scale-/targetsize- image variants.
@@ -55,7 +56,7 @@ $pri.Save("$stage\..\priconfig.xml")
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "makepri failed." }
 Pop-Location
 
-$out = "$root\Release\9-zip_${version}_x64.msix"
+$out = "$root\Release\9-zip-Archiver_${version}_x64.msix"
 New-Item -ItemType Directory -Force "$root\Release" | Out-Null
 & $makeappx pack /d $stage /p $out /o
 if ($LASTEXITCODE -ne 0) { throw "makeappx failed." }

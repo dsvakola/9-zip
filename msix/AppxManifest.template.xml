@@ -14,7 +14,7 @@
   <Identity Name="{{IDENTITY_NAME}}" Publisher="{{PUBLISHER}}" Version="{{VERSION}}" ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>9-zip</DisplayName>
+    <DisplayName>{{STORE_DISPLAY_NAME}}</DisplayName>
     <PublisherDisplayName>{{PUBLISHER_DISPLAY_NAME}}</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>Free archive manager that works like 7-Zip, with the self-healing .9z format.</Description>
@@ -31,7 +31,7 @@
   <Applications>
     <Application Id="NineZip" Executable="9-zip.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="9-zip"
+        DisplayName="{{STORE_DISPLAY_NAME}}"
         Description="Archive manager with the self-healing .9z format"
         BackgroundColor="#2B2E55"
         Square150x150Logo="Assets\Square150x150Logo.png"

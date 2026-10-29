@@ -1,6 +1,7 @@
 {
-  "_comment": "Copy these three values from Partner Center > your app > Product management > Product identity. Until then the placeholders below are used, which are fine for local testing only.",
-  "identityName": "VidyasagarAcademy.9-zip",
-  "publisher": "CN=00000000-0000-0000-0000-000000000000",
-  "publisherDisplayName": "Vidyasagar Academy"
+  "_comment": "From Partner Center > 9-zip Archiver > Product management > Product identity. Store ID 9N7VCJRQJQ3W, PFN VidyasagarAcademy.9-zipArchiver_z3tqm701my9nc.",
+  "identityName": "VidyasagarAcademy.9-zipArchiver",
+  "publisher": "CN=E5EAB892-17BA-4AC0-A205-3AE9F2BA13DD",
+  "publisherDisplayName": "Vidyasagar Academy",
+  "storeDisplayName": "9-zip Archiver"
 }

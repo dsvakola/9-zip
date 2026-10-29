@@ -6,7 +6,7 @@ Everything to paste into Partner Center, in the order Partner Center asks for it
 
 ## 1. Product identity (Partner Center gives these values)
 
-After you reserve the name **9-zip**, open *Product management → Product identity* and copy these three values into `msix/store-identity.json`:
+Reserved name: **9-zip Archiver** ("9-zip" was taken). Store ID 9N7VCJRQJQ3W, PFN VidyasagarAcademy.9-zipArchiver_z3tqm701my9nc. After reserving, open *Product management → Product identity* and copy these three values into `msix/store-identity.json`:
 
 | Partner Center field | Goes into |
 |---|---|
@@ -21,7 +21,7 @@ npx tauri build --bundles nsis
 powershell -ExecutionPolicy Bypass -File msix\build-msix.ps1
 ```
 
-Upload `Release\9-zip_1.0.0.0_x64.msix`.
+Upload `Release\9-zip-Archiver_<version>.0_x64.msix` (1.2.0.0 was submitted on 29 October 2026). The values are already filled in `msix/store-identity.json`.
 
 ---
 
@@ -34,8 +34,8 @@ Upload `Release\9-zip_1.0.0.0_x64.msix`.
 ## 3. Properties
 
 - **Category:** Utilities & tools
-- **Privacy policy URL:** https://github.com/dsvakola/software9-zip/privacy (publish the text in section 7 there first)
-- **Website:** https://github.com/dsvakola/software
+- **Privacy policy URL:** https://github.com/dsvakola/9-zip/blob/main/PRIVACY.md
+- **Website:** https://vsa.edu.in/software/
 - **Support contact:** softinquiry@vsa.edu.in
 - **Product declarations:**
   - This app does not collect, store or transmit personal information: **yes**.
@@ -65,7 +65,7 @@ Paste into *Notes for certification*:
 ## 6. Store listing (English)
 
 ### Product name
-9-zip
+9-zip Archiver
 
 ### Short description (up to 270 characters)
 Free archive manager for Windows that works like 7-Zip, with its own self-healing .9z format. Create, open, test and extract 9Z, 7Z, ZIP, TAR, GZIP, BZIP2, XZ, ZSTD, LZ4 and BROTLI archives.
@@ -106,7 +106,7 @@ Developed by Prof. Dattaraj S. Vidyasagar and Prof. Yash D. Vidyasagar, for Vidy
 - Free, with no ads and no data collection
 
 ### Search terms (up to 7)
-zip, 7z, archive, extract, compress, unzip, rar alternative
+zip, 7z, archive, extract, compress, unzip, self-healing archive
 
 > Do not use "7-Zip" as a search term: Store policy does not allow other products' names as keywords.
 
@@ -121,14 +121,14 @@ At least 1, up to 10, PNG, 1366×768 or larger. Suggested set:
 4. The Test result for a .9z archive
 5. The 9-zip submenu in the File Explorer right-click menu
 
-Capture at 100% display scaling, maximised to 1920×1080 if possible.
+The 4 screenshots submitted are in `store/screenshots/`. Capture at 100% display scaling, maximised to 1920×1080 if possible.
 
 ### Store logos
 The package already contains every required tile and icon (`msix/Assets`). Partner Center may also ask for a 300×300 Store logo: a ready 300×300 file is at `store/9-zip-300.png`.
 
 ---
 
-## 7. Privacy policy (publish at https://github.com/dsvakola/software9-zip/privacy)
+## 7. Privacy policy (published at https://github.com/dsvakola/9-zip/blob/main/PRIVACY.md)
 
 **9-zip Privacy Policy**
 
