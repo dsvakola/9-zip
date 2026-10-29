@@ -1,0 +1,4 @@
+# Build the Explorer menu DLL with the C runtime inside it, so it needs no
+# Visual C++ Redistributable on the user's PC (Store installs have none).
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

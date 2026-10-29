@@ -900,7 +900,7 @@ fn pack_file(
     meter: &mut Meter,
 ) -> Result<(u64, String), AppError> {
     let mut input = File::open(&item.disk_path)
-        .map_err(|e| AppError::new(format!("Cannot read {}: {}", item.disk_path.display(), e)))?;
+        .map_err(|e| crate::engine::compress::source_error(&item.disk_path, &e))?;
     let mut hasher = Sha256::new();
     let mut total = 0u64;
     loop {
@@ -987,9 +987,7 @@ fn write_nine_z(
             let mut sample = vec![0u8; SNIFF_LEN.min(item.size as usize)];
             let n = File::open(&item.disk_path)
                 .and_then(|mut f| read_full(&mut f, &mut sample))
-                .map_err(|e| {
-                    AppError::new(format!("Cannot read {}: {}", item.disk_path.display(), e))
-                })?;
+                .map_err(|e| crate::engine::compress::source_error(&item.disk_path, &e))?;
             worth_compressing(&item.archive_path, &sample[..n])
         };
         if goes_solid {

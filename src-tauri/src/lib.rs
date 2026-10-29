@@ -6,6 +6,9 @@ mod engine;
 mod error;
 mod models;
 mod task_manager;
+mod webview2_check;
+
+pub use webview2_check::{explain_missing_webview2, webview2_available};
 
 use task_manager::TaskManager;
 

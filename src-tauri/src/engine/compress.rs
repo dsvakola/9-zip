@@ -83,6 +83,79 @@ pub fn scan_inputs(input_paths: &[String]) -> Result<(Vec<InputFileItem>, u64), 
     Ok((items, total_bytes))
 }
 
+/// Message for a folder in which 9-zip may not save the archive.
+fn output_folder_error(folder: &Path, err: &std::io::Error) -> AppError {
+    if err.kind() == std::io::ErrorKind::PermissionDenied {
+        AppError::new(format!(
+            "Windows does not allow 9-zip to save in {}.
+
+Please choose another folder (for example Documents or Desktop).",
+            folder.display()
+        ))
+    } else {
+        AppError::new(format!("Cannot save in {}: {}", folder.display(), err))
+    }
+}
+
+/// Makes sure the archive's folder exists and 9-zip may create files in it,
+/// by creating and removing a small test file.
+pub(crate) fn check_output_folder(output: &Path) -> Result<(), AppError> {
+    let folder = output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    fs::create_dir_all(folder).map_err(|e| output_folder_error(folder, &e))?;
+    let probe = folder.join(format!(".9-zip-write-test-{}.tmp", std::process::id()));
+    match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe)
+    {
+        Ok(file) => {
+            drop(file);
+            let _ = fs::remove_file(&probe);
+            Ok(())
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(e) => Err(output_folder_error(folder, &e)),
+    }
+}
+
+/// Creates the archive file; the error names the file.
+fn create_output(path: &Path) -> Result<File, AppError> {
+    File::create(path).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::PermissionDenied {
+            AppError::new(format!(
+                "Windows does not allow 9-zip to write {}.
+
+The file may be read-only or open in another program, or the folder may be protected. Please choose another name or folder.",
+                path.display()
+            ))
+        } else {
+            AppError::new(format!("Cannot create {}: {}", path.display(), e))
+        }
+    })
+}
+
+/// Message for an input file that cannot be read; it names the file.
+pub(crate) fn source_error(path: &Path, err: &std::io::Error) -> AppError {
+    if err.kind() == std::io::ErrorKind::PermissionDenied {
+        AppError::new(format!(
+            "Windows does not allow 9-zip to read {}.
+
+The file may be open in another program or protected. Close it, or leave it out, and try again.",
+            path.display()
+        ))
+    } else {
+        AppError::new(format!("Cannot read {}: {}", path.display(), err))
+    }
+}
+
+/// Opens an input file; the error names the file.
+fn open_source(path: &Path) -> Result<File, AppError> {
+    File::open(path).map_err(|e| source_error(path, &e))
+}
+
 pub fn compress_archive(
     options: CompressOptions,
     cancel_flag: Arc<AtomicBool>,
@@ -102,16 +175,11 @@ pub fn compress_archive(
         speed_mb_per_sec: 0.0,
     });
 
+    // Find out at once if Windows lets 9-zip save in the chosen folder.
+    check_output_folder(Path::new(&options.output_path))?;
+
     let (items, total_bytes) = scan_inputs(&options.input_paths)?;
     let total_files = items.len();
-
-    // Ensure output directory exists
-    if let Some(parent) = Path::new(&options.output_path)
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-    {
-        fs::create_dir_all(parent)?;
-    }
 
     match options.format {
         CompressionFormat::NineZ => {
@@ -130,7 +198,7 @@ pub fn compress_archive(
             compress_7z(&items, total_bytes, &options, &cancel_flag, progress)?;
         }
         CompressionFormat::Tar => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             let mut tar = tar::Builder::new(BufWriter::new(out_file));
             write_tar_entries(
                 &mut tar,
@@ -144,7 +212,7 @@ pub fn compress_archive(
             writer.flush()?;
         }
         CompressionFormat::Gzip => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             let gz_level = match options.level {
                 CompressionLevel::Store => flate2::Compression::none(),
                 CompressionLevel::Fastest => flate2::Compression::fast(),
@@ -165,7 +233,7 @@ pub fn compress_archive(
             encoder.finish()?;
         }
         CompressionFormat::Bzip2 => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             let bz_level = match options.level {
                 CompressionLevel::Fastest => bzip2::Compression::fast(),
                 CompressionLevel::Ultra => bzip2::Compression::best(),
@@ -185,7 +253,7 @@ pub fn compress_archive(
             encoder.finish()?;
         }
         CompressionFormat::Xz => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             // CRC64 check, like the xz tool, so Test can detect damage.
             let xz_options = lzma_rust2::XzOptions::with_preset(options.level.as_u32());
             let encoder = lzma_rust2::XzWriter::new(BufWriter::new(out_file), xz_options)
@@ -206,7 +274,7 @@ pub fn compress_archive(
                 .flush()?;
         }
         CompressionFormat::Zstd => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             let zstd_level = match options.level {
                 CompressionLevel::Store => 1,
                 CompressionLevel::Fastest => 1,
@@ -236,7 +304,7 @@ pub fn compress_archive(
                 .map_err(|e| AppError::new(format!("Zstandard finish error: {}", e)))?;
         }
         CompressionFormat::Lz4 => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             // Content checksum, so Test can detect damage.
             let frame_info = lz4_flex::frame::FrameInfo::new().content_checksum(true);
             let encoder = lz4_flex::frame::FrameEncoder::with_frame_info(
@@ -258,7 +326,7 @@ pub fn compress_archive(
                 .map_err(|e| AppError::new(format!("LZ4 finish error: {}", e)))?;
         }
         CompressionFormat::Brotli => {
-            let out_file = File::create(&options.output_path)?;
+            let out_file = create_output(Path::new(&options.output_path))?;
             let quality = match options.level {
                 CompressionLevel::Store => 0,
                 CompressionLevel::Fastest => 1,
@@ -305,7 +373,7 @@ fn compress_zip(
     cancel_flag: &Arc<AtomicBool>,
     progress: &Channel<ProgressPayload>,
 ) -> Result<(), AppError> {
-    let file = File::create(&options.output_path)?;
+    let file = create_output(Path::new(&options.output_path))?;
     let mut zip = ZipWriter::new(BufWriter::new(file));
 
     let method = match options.level {
@@ -343,7 +411,7 @@ fn compress_zip(
             zip.add_directory(&item.archive_path, base_opts)?;
         } else {
             zip.start_file(&item.archive_path, base_opts)?;
-            let mut f = File::open(&item.disk_path)?;
+            let mut f = open_source(&item.disk_path)?;
             loop {
                 if TaskManager::is_cancelled(cancel_flag) {
                     let _ = fs::remove_file(&options.output_path);
@@ -408,7 +476,7 @@ fn write_tar_entries<W: Write>(
         if item.is_dir {
             tar.append_dir(&item.archive_path, &item.disk_path)?;
         } else {
-            let mut file = File::open(&item.disk_path)?;
+            let mut file = open_source(&item.disk_path)?;
             tar.append_file(&item.archive_path, &mut file)?;
             bytes_processed += item.size;
         }
@@ -507,7 +575,9 @@ impl Read for TrackedFile<'_> {
             ));
         }
         if self.file.is_none() {
-            self.file = Some(File::open(&self.path)?);
+            let file = File::open(&self.path)
+                .map_err(|e| std::io::Error::new(e.kind(), source_error(&self.path, &e).message))?;
+            self.file = Some(file);
         }
         let n = match self.file.as_mut() {
             Some(file) => file.read(buf)?,

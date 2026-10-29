@@ -2480,7 +2480,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nine_z"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "brotli 7.0.0",
  "bzip2 0.5.2",
@@ -2503,7 +2503,9 @@ dependencies = [
  "tauri-plugin-opener",
  "time",
  "walkdir",
+ "webview2-com",
  "windows 0.58.0",
+ "windows-core 0.62.2",
  "winreg 0.52.0",
  "zip",
  "zstd",

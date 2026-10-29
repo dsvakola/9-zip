@@ -1,6 +1,6 @@
 [package]
 name = "nine_z"
-version = "1.2.0"
+version = "1.2.1"
 license = "GPL-3.0-only"
 homepage = "https://github.com/dsvakola/software"
 repository = "https://github.com/dsvakola/9-zip"
@@ -40,6 +40,9 @@ lz4_flex = "0.11"
 brotli = "7.0"
 reed-solomon-erasure = "6.0"
 winreg = "0.52"
+# Startup check for the WebView2 runtime (same versions Tauri already uses).
+webview2-com = "0.39"
+windows-core = "0.62"
 
 # Windows API
 windows = { version = "0.58", features = [

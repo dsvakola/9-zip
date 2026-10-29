@@ -9,6 +9,13 @@ fn main() {
     match std::env::args().nth(1).as_deref() {
         Some("--register-shell") => std::process::exit(nine_z_lib::register_shell(true)),
         Some("--unregister-shell") => std::process::exit(nine_z_lib::register_shell(false)),
-        _ => nine_z_lib::run(),
+        _ => {
+            // Without WebView2 the window cannot be drawn: explain, then exit.
+            if !nine_z_lib::webview2_available() {
+                nine_z_lib::explain_missing_webview2();
+                return;
+            }
+            nine_z_lib::run()
+        }
     }
 }
