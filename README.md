@@ -1,5 +1,7 @@
 # 9-zip - Archive Manager for Windows
 
+<p><a href="https://apps.microsoft.com/detail/9n7vcjrqjq3w"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get 9-zip Archiver from Microsoft"/></a></p>
+
 **9-zip** is a free archive manager for Windows that works like 7-Zip and adds its own self-healing **.9z** format.
 
 Developed by **Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar**, for **Vidyasagar Academy**.
