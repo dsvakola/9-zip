@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=9-zip
+GenericName=Archive Manager
+Comment={{comment}}
+Exec={{exec}} %f
+Icon={{icon}}
+Terminal=false
+Categories=Utility;Archiving;Compression;
+Keywords=zip;7z;9z;tar;gz;xz;zstd;archive;compress;extract;
+MimeType=application/x-9z;application/zip;application/x-7z-compressed;application/x-tar;application/gzip;application/x-gzip;application/x-compressed-tar;application/x-bzip2;application/x-bzip;application/x-bzip-compressed-tar;application/x-xz;application/x-xz-compressed-tar;application/zstd;application/x-zstd-compressed-tar;application/x-lz4;application/x-lz4-compressed-tar;application/x-brotli;

@@ -1,0 +1,57 @@
+# Builds the Linux packages of 9-zip: AppImage, .deb and .rpm.
+# Ubuntu 22.04 is used so the packages also run on older Linux versions.
+# A push to the "linux" branch gives test packages (under "Artifacts" on
+# the run's page). A version tag such as v1.3.0 also prepares a draft
+# GitHub Release with the packages, to be published by hand.
+name: Linux packages
+
+on:
+  push:
+    branches: [linux]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux build packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev libxdo-dev patchelf rpm
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: ./build-linux.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 9-zip-linux-packages
+          path: |
+            Release/*.deb
+            Release/*.rpm
+            Release/*.AppImage
+
+      - name: Draft GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            Release/*.deb
+            Release/*.rpm
+            Release/*.AppImage

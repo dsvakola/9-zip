@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The .9z archive type, so Linux file managers show it as an archive
+     and open it with 9-zip. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-9z">
+    <comment>9-zip archive</comment>
+    <generic-icon name="package-x-generic"/>
+    <glob pattern="*.9z"/>
+  </mime-type>
+</mime-info>
