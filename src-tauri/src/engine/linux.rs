@@ -100,12 +100,19 @@ pub fn open_with_shell(path: &str, _verb: &str) -> Result<(), AppError> {
 
 /// The user's Desktop, Documents and Downloads folders, as the desktop
 /// names them (they can be translated, such as "Bureau" in French).
+/// Without the desktop's list of folders, the usual English names in the
+/// home folder are used when they exist.
 pub fn known_folders() -> KnownFolders {
-    let text = |p: Option<std::path::PathBuf>| p.map(|p| p.to_string_lossy().to_string());
+    let pick = |found: Option<std::path::PathBuf>, name: &str| {
+        found
+            .or_else(|| dirs::home_dir().map(|home| home.join(name)))
+            .filter(|p| p.is_dir())
+            .map(|p| p.to_string_lossy().to_string())
+    };
     KnownFolders {
-        desktop: text(dirs::desktop_dir()),
-        documents: text(dirs::document_dir()),
-        downloads: text(dirs::download_dir()),
+        desktop: pick(dirs::desktop_dir(), "Desktop"),
+        documents: pick(dirs::document_dir(), "Documents"),
+        downloads: pick(dirs::download_dir(), "Downloads"),
     }
 }
 

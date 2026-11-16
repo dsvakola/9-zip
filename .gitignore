@@ -27,4 +27,4 @@ dist-ssr
 /Release/
 /src-tauri/shell-ext/target/
 /src-tauri/target/
-.claude/settings.local.json
+.claude/

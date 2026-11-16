@@ -1,11 +1,22 @@
 /**
- * 9-zip - Archive Manager for Windows
+ * 9-zip - Archive Manager for Windows and Linux
  * Copyright (C) 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar
  * Licensed under the GNU General Public License v3.0 (GPL-3.0-only).
  */
 import { open, save, message, ask } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import {
+  IS_WINDOWS,
+  SEP,
+  DEFAULT_ROOT,
+  trimSep,
+  baseName,
+  joinPath,
+  parentFolder,
+  upFolder,
+  samePath,
+} from "./paths";
 import {
   getDrives,
   listDirectory,
@@ -49,7 +60,7 @@ import {
 } from "./api";
 
 // STATE
-let currentPath: string = "C:\\";
+let currentPath: string = DEFAULT_ROOT;
 let isInsideArchive: boolean = false;
 let activeArchivePath: string | null = null;
 let currentFiles: FileItem[] = [];
@@ -128,7 +139,7 @@ const archivePasswords = new Map<string, string>();
 /** Shows the "Enter password" window; resolves to null when cancelled. */
 function askPassword(archivePath: string, wrong: boolean): Promise<string | null> {
   return new Promise((resolve) => {
-    passwordArchive.textContent = archivePath.split("\\").pop() || archivePath;
+    passwordArchive.textContent = baseName(archivePath);
     passwordWrong.classList.toggle("hidden", !wrong);
     passwordInput.value = "";
     passwordShow.checked = false;
@@ -363,17 +374,9 @@ async function closeDialogWindow() {
   await getCurrentWindow().close();
 }
 
-function parentFolder(path: string): string {
-  const trimmed = path.replace(/\\$/, "");
-  const cut = trimmed.lastIndexOf("\\");
-  if (cut <= 0) return "C:\\";
-  const parent = trimmed.substring(0, cut);
-  return /^[a-zA-Z]:$/.test(parent) ? parent + "\\" : parent;
-}
-
 /** "photos.tar.gz" -> "photos", "data.9z" -> "data" */
 function archiveStem(path: string): string {
-  const name = path.split("\\").pop() || path;
+  const name = baseName(path);
   const multi = name.match(/^(.*)\.tar\.(gz|bz2|xz|zst|lz4|br)$/i);
   if (multi) return multi[1];
   const dot = name.lastIndexOf(".");
@@ -391,7 +394,7 @@ async function handleLaunchAction(action: string, paths: string[]) {
       const destination =
         action === "extract_here"
           ? parentFolder(archive)
-          : `${parentFolder(archive).replace(/\\$/, "")}\\${archiveStem(archive)}`;
+          : joinPath(parentFolder(archive), archiveStem(archive));
       await executeDirectExtraction(archive, destination);
     }
     await navigateTo(parentFolder(first));
@@ -424,11 +427,11 @@ async function handleLaunchAction(action: string, paths: string[]) {
 
 /** Explorer's "Add to <name>.9z / .zip": no dialog, default settings, never overwrites. */
 async function quickAdd(paths: string[], format: "9z" | "zip") {
-  const folder = parentFolder(paths[0]).replace(/\\$/, "");
+  const folder = trimSep(parentFolder(paths[0]));
   const base =
     paths.length === 1
       ? archiveStem(paths[0])
-      : folder.split("\\").pop() || "archive";
+      : baseName(folder) || "archive";
   const taken = new Set(currentFiles.map((f) => f.name.toLowerCase()));
   let name = `${base}.${format}`;
   for (let n = 2; taken.has(name.toLowerCase()); n++) name = `${base} (${n}).${format}`;
@@ -440,7 +443,7 @@ async function quickAdd(paths: string[], format: "9z" | "zip") {
     await compressFiles(
       {
         inputPaths: paths,
-        outputPath: `${folder}\\${name}`,
+        outputPath: joinPath(folder, name),
         format,
         level: "normal",
         threads: Math.min(8, navigator.hardwareConcurrency || 4),
@@ -451,7 +454,7 @@ async function quickAdd(paths: string[], format: "9z" | "zip") {
     );
     hideProgressModal();
     await navigateTo(parentFolder(paths[0]));
-    selectedPaths.add(`${folder}\\${name}`);
+    selectedPaths.add(joinPath(folder, name));
     updateRowSelections();
   } catch (err: unknown) {
     hideProgressModal();
@@ -466,24 +469,27 @@ async function loadDrives() {
     const drives: DriveItem[] = await getDrives();
     selectDrives.innerHTML = "";
 
-    // Find C: or default fixed drive
-    let preferredDrive = "C:\\";
+    // Windows: drive letters, starting at C:. Linux: places such as the
+    // file system, Home and USB drives, starting at Home.
+    let preferredDrive = DEFAULT_ROOT;
     for (const drive of drives) {
-      const val = drive.letter + "\\";
+      const val = IS_WINDOWS ? drive.letter + "\\" : drive.letter;
       const opt = document.createElement("option");
       opt.value = val;
-      opt.textContent = `${drive.letter} (${drive.label})`;
+      opt.textContent = IS_WINDOWS ? `${drive.letter} (${drive.label})` : drive.label;
+      if (!IS_WINDOWS) opt.title = drive.letter;
       selectDrives.appendChild(opt);
-      if (drive.letter.toUpperCase() === "C:" || drive.letter.toUpperCase() === "C") {
+      if (IS_WINDOWS && (drive.letter.toUpperCase() === "C:" || drive.letter.toUpperCase() === "C")) {
         preferredDrive = val;
       }
+      if (!IS_WINDOWS && drive.label === "Home") preferredDrive = val;
     }
 
     currentPath = preferredDrive;
     selectDrives.value = preferredDrive;
   } catch (err) {
     console.error("Failed to load drives:", err);
-    currentPath = "C:\\";
+    currentPath = DEFAULT_ROOT;
   }
 }
 
@@ -504,7 +510,7 @@ async function navigateTo(target: string) {
 
   // Ensure trailing slash for drive roots
   let normalized = target;
-  if (/^[a-zA-Z]:$/.test(normalized)) {
+  if (IS_WINDOWS && /^[a-zA-Z]:$/.test(normalized)) {
     normalized += "\\";
   }
 
@@ -514,10 +520,10 @@ async function navigateTo(target: string) {
     inputPath.value = currentPath;
     renderGrid();
   } catch {
-    // If target directory failed, fallback gracefully to C:\
+    // If target directory failed, fallback gracefully to C:\ (Linux: /)
     try {
-      currentFiles = await listDirectory("C:\\");
-      currentPath = "C:\\";
+      currentFiles = await listDirectory(DEFAULT_ROOT);
+      currentPath = DEFAULT_ROOT;
       inputPath.value = currentPath;
       renderGrid();
     } catch {
@@ -531,9 +537,9 @@ async function openArchive(archivePath: string) {
   try {
     isInsideArchive = true;
     activeArchivePath = archivePath;
-    inputPath.value = archivePath + "\\";
+    inputPath.value = archivePath + SEP;
     archiveBanner.classList.remove("hidden");
-    archiveBannerName.textContent = archivePath.split("\\").pop() || archivePath;
+    archiveBannerName.textContent = baseName(archivePath);
     addressTypeIcon.innerHTML = '<path d="M2 2h12v12H2zm5 2v2h2V4zm0 3v2h2V7zm-2 5h6v1H5z" fill="#e67e22"/>';
 
     // Check if .9z
@@ -665,7 +671,7 @@ function enterArchiveFolder(folder: string) {
 function renderArchiveGrid() {
   archiveRows = buildArchiveRows();
   if (activeArchivePath) {
-    inputPath.value = activeArchivePath + "\\" + (archiveFolder ? archiveFolder.replace(/\//g, "\\") + "\\" : "");
+    inputPath.value = activeArchivePath + SEP + (archiveFolder ? archiveFolder.replace(/\//g, SEP) + SEP : "");
   }
   gridBody.innerHTML = "";
   if (archiveRows.length === 0) {
@@ -843,16 +849,12 @@ function setupEventListeners() {
       return;
     }
     if (isInsideArchive && activeArchivePath) {
-      const parent = activeArchivePath.substring(0, activeArchivePath.lastIndexOf("\\"));
-      navigateTo(parent || "C:\\");
+      const parent = activeArchivePath.substring(0, activeArchivePath.lastIndexOf(SEP));
+      navigateTo(parent || DEFAULT_ROOT);
       return;
     }
-    const trimmed = currentPath.replace(/\\$/, "");
-    const lastSlash = trimmed.lastIndexOf("\\");
-    if (lastSlash >= 0) {
-      const parent = trimmed.substring(0, lastSlash + 1);
-      navigateTo(parent || "C:\\");
-    }
+    const parent = upFolder(currentPath);
+    if (parent !== null) navigateTo(parent);
   });
 
   // Path input Enter
@@ -863,8 +865,8 @@ function setupEventListeners() {
   // Exit Archive
   btnExitArchive.addEventListener("click", () => {
     if (activeArchivePath) {
-      const parent = activeArchivePath.substring(0, activeArchivePath.lastIndexOf("\\"));
-      navigateTo(parent || "C:\\");
+      const parent = activeArchivePath.substring(0, activeArchivePath.lastIndexOf(SEP));
+      navigateTo(parent || DEFAULT_ROOT);
     }
   });
 
@@ -950,7 +952,8 @@ function setupEventListeners() {
       return;
     }
     const paths = Array.from(selectedPaths);
-    const ok = await ask(`Send ${paths.length} item(s) to the Recycle Bin?`, { title: "9-zip", kind: "warning" });
+    const bin = IS_WINDOWS ? "Recycle Bin" : "Trash";
+    const ok = await ask(`Send ${paths.length} item(s) to the ${bin}?`, { title: "9-zip", kind: "warning" });
     if (!ok) return;
 
     try {
@@ -968,11 +971,14 @@ function setupEventListeners() {
       // Like 7-Zip: properties of the selection and of the archive.
       showArchiveProperties();
     } else if (selectedPaths.size === 1) {
-      // Like 7-Zip: the Windows Properties window.
+      // Like 7-Zip: the Windows Properties window. Linux desktops have no
+      // shared one, so 9-zip shows its own.
       const p = Array.from(selectedPaths)[0];
-      showProperties(p).catch((err: unknown) => notify((err as Error).message));
+      if (IS_WINDOWS) showProperties(p).catch((err: unknown) => notify((err as Error).message));
+      else showFileProperties(p);
     } else {
-      modalAbout.classList.remove("hidden");
+      // Same as Help > About, so the version number is shown too.
+      document.getElementById("m-help-about")?.click();
     }
   });
 
@@ -1032,7 +1038,10 @@ function setupEventListeners() {
   document.getElementById("m-refresh")?.addEventListener("click", () => navigateTo(currentPath));
   document.getElementById("m-tools-benchmark")?.addEventListener("click", () => modalBenchmark.classList.remove("hidden"));
   document.getElementById("m-tools-hash")?.addEventListener("click", executeHasher);
-  // A Store install has its Explorer menu declared by the package.
+  // A Store install has its Explorer menu declared by the package. The
+  // Linux file manager menus are not ready yet.
+  if (!IS_WINDOWS) document.getElementById("m-tools-register-menu")?.classList.add("hidden");
+  if (!IS_WINDOWS) document.getElementById("btn-delete")?.setAttribute("title", "Delete (Move to Trash)");
   isPackaged()
     .then((packaged) => {
       if (packaged) document.getElementById("m-tools-register-menu")?.classList.add("hidden");
@@ -1169,6 +1178,22 @@ function showHelp(page: string) {
 
 // PROPERTIES inside an archive, laid out like 7-Zip's: the item, the
 // selection, then the archive itself.
+/** Linux: name, place, size and date of a file or folder in 9-zip's own window. */
+function showFileProperties(path: string) {
+  const item = currentFiles.find((f) => f.path === path);
+  const lines: [string, string][] = [
+    ["Name", baseName(path)],
+    ["Location", parentFolder(path)],
+    ["Type", item?.isDir ? "Folder" : item?.extension ? `${item.extension.toUpperCase()} file` : "File"],
+  ];
+  if (item && !item.isDir) lines.push(["Size", `${formatBytes(item.size)} bytes`]);
+  if (item?.modified) lines.push(["Modified", formatDate(item.modified)]);
+  propertiesTable.innerHTML = lines
+    .map(([label, value]) => `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`)
+    .join("");
+  modalProperties.classList.remove("hidden");
+}
+
 async function showArchiveProperties() {
   if (!activeArchivePath) return;
   const archive = activeArchivePath;
@@ -1495,7 +1520,8 @@ async function renderFavoritesMenu() {
   if (known.desktop) add("Desktop", known.desktop);
   if (known.documents) add("Documents", known.documents);
   if (known.downloads) add("Downloads", known.downloads);
-  add("Drive C:\\", "C:\\");
+  if (IS_WINDOWS) add("Drive C:\\", "C:\\");
+  else add("File System", "/");
   if (favorites.length > 0) {
     const sep = document.createElement("div");
     sep.className = "menu-separator";
@@ -1506,7 +1532,7 @@ async function renderFavoritesMenu() {
 
 async function addCurrentToFavorites() {
   const folder = isInsideArchive && activeArchivePath ? activeArchivePath : currentPath;
-  const existing = favorites.findIndex((f) => f.toLowerCase() === folder.toLowerCase());
+  const existing = favorites.findIndex((f) => samePath(f, folder));
   if (existing >= 0) {
     const remove = await ask(`${folder} is already a favorite. Remove it from Favorites?`, {
       title: "9-zip",
@@ -1532,9 +1558,9 @@ function openCompressModal() {
     return;
   }
   const list = Array.from(selectedPaths);
-  const first = list[0].split("\\").pop() || "archive";
+  const first = baseName(list[0]) || "archive";
   const base = first.replace(/\.[^/.]+$/, "");
-  compressOutputName.value = `${currentPath.replace(/\\$/, "")}\\${base}.9z`;
+  compressOutputName.value = joinPath(currentPath, `${base}.9z`);
   compressSummary.textContent = `Selected: ${list.length} item(s)`;
   selectFormat.value = "9z";
   selectRecovery.value = "normal";
@@ -1727,7 +1753,7 @@ async function executeHasher() {
 
   modalHash.classList.remove("hidden");
   showAsDialog(modalHash, "Checksum");
-  hashFilename.textContent = "File: " + (filePath.split("\\").pop() || filePath);
+  hashFilename.textContent = "File: " + baseName(filePath);
   hashFilesize.textContent = fileObj ? "Size: " + formatDisplayBytes(fileObj.size) : "";
   hashCrc32.textContent = "Calculating...";
   hashMd5.textContent = "Calculating...";
@@ -1787,7 +1813,7 @@ async function runArchiveTest(archivePath: string) {
     const lines = [
       "There are no errors.",
       "",
-      `Archive: ${archivePath.split("\\").pop()}`,
+      `Archive: ${baseName(archivePath)}`,
       `Folders: ${formatBytes(r.folders)}`,
       `Files: ${formatBytes(r.files)}`,
       `Size: ${formatBytes(r.size)} bytes`,
