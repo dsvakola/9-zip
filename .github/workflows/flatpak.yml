@@ -62,8 +62,10 @@ jobs:
           manifest-path: flatpak/io.github.dsvakola.NineZip.yml
           cache-key: flatpak-builder-${{ github.sha }}
       - name: Check that every library is found in the runtime
+        shell: bash
         run: |
-          set -o pipefail
-          flatpak-builder --disable-rofiles-fuse --run flatpak_app flatpak/io.github.dsvakola.NineZip.yml ldd /app/bin/9-zip | tee ldd.txt
+          set -eo pipefail
+          flatpak install --user -y --noninteractive --bundle 9-zip.flatpak || flatpak install --system -y --noninteractive --bundle 9-zip.flatpak
+          flatpak run --command=ldd io.github.dsvakola.NineZip /app/bin/9-zip | tee ldd.txt
           grep -q "libwebkit2gtk-4.1" ldd.txt
           ! grep "not found" ldd.txt
