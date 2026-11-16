@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar -->
+<component type="desktop-application">
+  <id>io.github.dsvakola.NineZip</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <name>9-zip</name>
+  <summary>Archive manager with the self-healing .9z format</summary>
+
+  <developer id="io.github.dsvakola">
+    <name>Vidyasagar Academy</name>
+  </developer>
+
+  <description>
+    <p>
+      9-zip is a free archive manager. It looks and works like a classic
+      two-pane archiver: browse your folders, open archives like folders,
+      and add, extract and test files with a few clicks.
+    </p>
+    <p>
+      It creates 10 formats: 9Z, 7Z, ZIP, TAR, GZIP, BZIP2, XZ, ZSTD, LZ4 and
+      BROTLI. Its own .9z format adds three features:
+    </p>
+    <ul>
+      <li>Self-healing: Reed-Solomon recovery data repairs damaged blocks automatically</li>
+      <li>Smart-adaptive: solid LZMA2 for text and code, while photos and videos are stored as they are</li>
+      <li>VSA Integrity Seal: every file is checked against its SHA-256 fingerprint</li>
+    </ul>
+    <p>
+      Also included: AES-256 encryption for 7z and zip, CRC and SHA checksums,
+      a compression benchmark, and favorite folders.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.dsvakola.NineZip.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>A self-healing .9z archive, opened like a folder</caption>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/1-9z-archive.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Browsing folders and archives</caption>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/2-main-window.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Adding files to an archive</caption>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/3-add-to-archive.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/dsvakola/9-zip</url>
+  <url type="bugtracker">https://github.com/dsvakola/9-zip/issues</url>
+  <url type="vcs-browser">https://github.com/dsvakola/9-zip</url>
+  <url type="contact">https://vsa.edu.in/software/</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#a8c8f0</color>
+    <color type="primary" scheme_preference="dark">#1f3f75</color>
+  </branding>
+
+  <content_rating type="oars-1.1"/>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <provides>
+    <binary>9-zip</binary>
+    <mediatype>application/x-9z</mediatype>
+  </provides>
+
+  <releases>
+    <release version="1.3.2" date="2026-11-16">
+      <description>
+        <p>First release for Linux.</p>
+        <ul>
+          <li>Places list with Home and USB drives, Linux Trash, Properties window</li>
+          <li>Right-click menus for Files, Nemo and Dolphin (outside Flatpak)</li>
+          <li>Opens .9z and other archives from the file manager</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

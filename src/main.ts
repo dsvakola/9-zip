@@ -1580,7 +1580,8 @@ function openCompressModal() {
   }
   const list = Array.from(selectedPaths);
   const first = baseName(list[0]) || "archive";
-  const base = first.replace(/\.[^/.]+$/, "");
+  // ".cache" has no extension to remove, so it keeps its name.
+  const base = first.replace(/\.[^/.]+$/, "") || first;
   compressOutputName.value = joinPath(currentPath, `${base}.9z`);
   compressSummary.textContent = `Selected: ${list.length} item(s)`;
   selectFormat.value = "9z";

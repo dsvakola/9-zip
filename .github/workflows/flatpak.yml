@@ -1,0 +1,67 @@
+# Test build of the Flathub package (Flatpak) from this branch.
+# It builds the .deb from source, then runs the Flathub recipe with that
+# .deb instead of the release download, and checks the result.
+name: Flatpak
+
+on:
+  push:
+    branches: [linux]
+
+jobs:
+  deb:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux build packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev libxdo-dev patchelf
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build --bundles deb
+      - run: cp src-tauri/target/release/bundle/deb/*.deb flatpak/9-zip.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-for-flatpak
+          path: flatpak/9-zip.deb
+
+  flatpak:
+    needs: deb
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb-for-flatpak
+          path: flatpak
+      - name: Use the .deb built above
+        run: |
+          python3 - <<'PY'
+          import re
+          p = "flatpak/io.github.dsvakola.NineZip.yml"
+          s = open(p).read()
+          s = re.sub(r"      - type: file\n        url: .*\n        sha256: .*\n        dest-filename: 9-zip.deb\n",
+                     "      - type: file\n        path: 9-zip.deb\n", s)
+          open(p, "w").write(s)
+          PY
+          grep -n "9-zip.deb" flatpak/io.github.dsvakola.NineZip.yml
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: 9-zip.flatpak
+          manifest-path: flatpak/io.github.dsvakola.NineZip.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+      - name: Check that every library is found in the runtime
+        run: |
+          flatpak-builder --run flatpak_app flatpak/io.github.dsvakola.NineZip.yml ldd /app/bin/9-zip | tee ldd.txt
+          ! grep "not found" ldd.txt

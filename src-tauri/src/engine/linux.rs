@@ -73,12 +73,17 @@ pub fn get_logical_drives() -> Result<Vec<DriveItem>, AppError> {
 }
 
 /// Moves files and folders to the desktop's Trash, from where the user can
-/// restore them.
+/// restore them. GIO does this the same way as the Files app, and inside
+/// Flatpak it asks the desktop to do it, so the items land in the user's
+/// real Trash.
 pub fn move_to_recycle_bin(paths: &[String]) -> Result<(), AppError> {
-    if paths.is_empty() {
-        return Ok(());
+    use gio::prelude::FileExt;
+    for path in paths {
+        gio::File::for_path(path)
+            .trash(None::<&gio::Cancellable>)
+            .map_err(|e| AppError::new(format!("Cannot move {} to the Trash: {}", path, e)))?;
     }
-    trash::delete_all(paths).map_err(|e| AppError::new(format!("Cannot move to the Trash: {}", e)))
+    Ok(())
 }
 
 /// Opens a file with the program the desktop associates with it. Linux has
@@ -135,5 +140,10 @@ mod tests {
     #[test]
     fn trash_accepts_an_empty_list() {
         assert!(move_to_recycle_bin(&[]).is_ok());
+    }
+
+    #[test]
+    fn trash_reports_a_missing_file() {
+        assert!(move_to_recycle_bin(&["/no/such/9-zip/file".to_string()]).is_err());
     }
 }
