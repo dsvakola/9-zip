@@ -278,6 +278,11 @@ export async function registerShellMenu(): Promise<void> {
   return await invoke<void>("register_shell_menu");
 }
 
+/** Linux: removes 9-zip's items from the file manager menus. */
+export async function unregisterShellMenu(): Promise<void> {
+  return await invoke<void>("unregister_shell_menu");
+}
+
 export async function showInFolder(path: string): Promise<void> {
   return await invoke<void>("show_in_folder", { path });
 }

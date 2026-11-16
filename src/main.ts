@@ -49,6 +49,7 @@ import {
   type ArchiveInfo,
   type KnownFolders,
   registerShellMenu,
+  unregisterShellMenu,
   isPackaged,
   type CompressionFormat,
   type CompressionLevel,
@@ -1038,21 +1039,41 @@ function setupEventListeners() {
   document.getElementById("m-refresh")?.addEventListener("click", () => navigateTo(currentPath));
   document.getElementById("m-tools-benchmark")?.addEventListener("click", () => modalBenchmark.classList.remove("hidden"));
   document.getElementById("m-tools-hash")?.addEventListener("click", executeHasher);
-  // A Store install has its Explorer menu declared by the package. The
-  // Linux file manager menus are not ready yet.
-  if (!IS_WINDOWS) document.getElementById("m-tools-register-menu")?.classList.add("hidden");
+  // A Store install has its Explorer menu declared by the package. On Linux
+  // 9-zip writes the menus of Files, Nemo and Dolphin, and can remove them.
+  const registerItem = document.getElementById("m-tools-register-menu");
+  const unregisterItem = document.getElementById("m-tools-unregister-menu");
+  if (!IS_WINDOWS) {
+    if (registerItem) registerItem.textContent = "Add to File Manager Menu";
+    unregisterItem?.classList.remove("hidden");
+  }
   if (!IS_WINDOWS) document.getElementById("btn-delete")?.setAttribute("title", "Delete (Move to Trash)");
   isPackaged()
     .then((packaged) => {
-      if (packaged) document.getElementById("m-tools-register-menu")?.classList.add("hidden");
+      if (packaged) {
+        registerItem?.classList.add("hidden");
+        unregisterItem?.classList.add("hidden");
+      }
     })
     .catch(() => {});
   document.getElementById("m-tools-register-menu")?.addEventListener("click", async () => {
     try {
       await registerShellMenu();
-      notify("9-zip context menu successfully registered in Windows Explorer!");
+      notify(
+        IS_WINDOWS
+          ? "9-zip context menu successfully registered in Windows Explorer!"
+          : "9-zip was added to the right-click menu of Files (under Scripts), Nemo and Dolphin. If it does not appear yet, close and reopen the file manager."
+      );
     } catch (err: unknown) {
       notify("Context menu registration: " + (err as Error).message);
+    }
+  });
+  unregisterItem?.addEventListener("click", async () => {
+    try {
+      await unregisterShellMenu();
+      notify("9-zip was removed from the file manager menus.");
+    } catch (err: unknown) {
+      notify("Could not remove the menu: " + (err as Error).message);
     }
   });
   const showAbout = async () => {

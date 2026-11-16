@@ -152,16 +152,25 @@ pub fn is_packaged() -> bool {
 #[tauri::command]
 pub fn register_shell_menu() -> Result<(), AppError> {
     if crate::engine::packaging::is_packaged() {
-        return Err(AppError::new(
-            "9-zip was installed from the Microsoft Store, so its Explorer menu is already set up by Windows.",
-        ));
+        return Err(AppError::new(if cfg!(windows) {
+            "9-zip was installed from the Microsoft Store, so its Explorer menu is already set up by Windows."
+        } else {
+            "9-zip was installed from an app store, so it cannot add file manager menus."
+        }));
     }
     #[cfg(windows)]
     return crate::engine::context_menu::register_shell_context_menu();
     #[cfg(not(windows))]
-    Err(AppError::new(
-        "The file manager menu for Linux is not available yet.",
-    ))
+    return crate::engine::linux_menu::register_shell_context_menu();
+}
+
+/// Linux: removes the menu files that `register_shell_menu` wrote.
+#[tauri::command]
+pub fn unregister_shell_menu() -> Result<(), AppError> {
+    #[cfg(windows)]
+    return crate::engine::context_menu::unregister_shell_context_menu();
+    #[cfg(not(windows))]
+    return crate::engine::linux_menu::unregister_shell_context_menu();
 }
 
 #[tauri::command]

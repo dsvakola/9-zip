@@ -7,6 +7,8 @@ pub mod file_ops;
 pub mod hasher;
 #[cfg(not(windows))]
 pub mod linux;
+#[cfg(not(windows))]
+pub mod linux_menu;
 pub mod list;
 pub mod nine_z_format;
 pub mod packaging;

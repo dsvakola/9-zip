@@ -65,6 +65,7 @@ pub fn run() {
             commands::test_archive,
             commands::get_launch_action,
             commands::register_shell_menu,
+            commands::unregister_shell_menu,
             commands::is_packaged,
             commands::show_in_folder,
             commands::open_path,
