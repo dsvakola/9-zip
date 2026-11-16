@@ -1,4 +1,4 @@
-// 9-zip - Archive Manager for Windows
+// 9-zip - Archive Manager for Windows and Linux
 // Copyright (C) 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar
 // Licensed under the GNU General Public License v3.0 (GPL-3.0-only).
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
@@ -11,6 +11,8 @@ fn main() {
         Some("--unregister-shell") => std::process::exit(nine_z_lib::register_shell(false)),
         _ => {
             // Without WebView2 the window cannot be drawn: explain, then exit.
+            // (On Linux the packages bring WebKitGTK with them.)
+            #[cfg(windows)]
             if !nine_z_lib::webview2_available() {
                 nine_z_lib::explain_missing_webview2();
                 return;

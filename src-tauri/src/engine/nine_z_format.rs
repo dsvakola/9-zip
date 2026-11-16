@@ -1239,6 +1239,12 @@ pub fn nine_z_details(archive_path: &Path) -> Result<NineZDetails, AppError> {
 /// escape it (absolute paths, drive letters, `..`).
 fn safe_join(dest_dir: &Path, name: &str) -> Result<PathBuf, AppError> {
     let cleaned = name.replace('\\', "/");
+    if super::extract::starts_with_drive_letter(&cleaned) {
+        return Err(AppError::new(format!(
+            "Security warning: blocked unsafe path in archive: {}",
+            name
+        )));
+    }
     let mut out = dest_dir.to_path_buf();
     let mut depth = 0;
     for part in Path::new(&cleaned).components() {

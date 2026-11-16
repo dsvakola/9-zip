@@ -62,15 +62,14 @@ Recipients need 9-zip to open .9z archives.
 
 ## Building
 
-```bash
-npm ci
-npx tauri build --bundles nsis
-```
-
-Then copy the results into `Release/`:
+**Windows:** double-click `Build 9-zip.bat`. It runs `pnpm install` and `pnpm tauri build`, then copies the results into `Release/`:
 
 - `Release/9-zip.exe`: portable program
-- `Release/9-zip_1.2.0_x64-setup.exe`: installer
+- `Release/9-zip_<version>_x64-setup.exe`: installer
+
+**Linux:** run `./build-linux.sh`. It puts the `.deb`, `.rpm` and `.AppImage` packages into `Release/`.
+
+pnpm is the only package manager used for this project.
 
 ---
 

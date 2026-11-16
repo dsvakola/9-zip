@@ -1,4 +1,4 @@
-// 9-zip - Archive Manager for Windows
+// 9-zip - Archive Manager for Windows and Linux
 // Copyright (C) 2026 Prof. Dattaraj S. Vidyasagar & Prof. Yash D. Vidyasagar
 // Licensed under the GNU General Public License v3.0 (GPL-3.0-only).
 mod commands;
@@ -6,8 +6,10 @@ mod engine;
 mod error;
 mod models;
 mod task_manager;
+#[cfg(windows)]
 mod webview2_check;
 
+#[cfg(windows)]
 pub use webview2_check::{explain_missing_webview2, webview2_available};
 
 use task_manager::TaskManager;
@@ -18,6 +20,7 @@ mod engine_tests;
 /// For the installer: adds (`true`) or removes (`false`) the Explorer menu.
 /// Returns the process exit code. Never touches a Store (MSIX) install,
 /// whose menu is declared by its package.
+#[cfg(windows)]
 pub fn register_shell(add: bool) -> i32 {
     if engine::packaging::is_packaged() {
         return 0;
@@ -28,6 +31,13 @@ pub fn register_shell(add: bool) -> i32 {
         engine::context_menu::unregister_shell_context_menu()
     };
     if result.is_ok() { 0 } else { 1 }
+}
+
+/// On Linux the packages (.deb, .rpm, Flatpak, Snap) declare the file
+/// types themselves, so there is nothing to register.
+#[cfg(not(windows))]
+pub fn register_shell(_add: bool) -> i32 {
+    0
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

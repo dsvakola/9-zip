@@ -1,10 +1,10 @@
 [package]
 name = "nine_z"
-version = "1.2.1"
+version = "1.2.2"
 license = "GPL-3.0-only"
 homepage = "https://github.com/dsvakola/software"
 repository = "https://github.com/dsvakola/9-zip"
-description = "9-zip - Archive manager for Windows"
+description = "9-zip - Archive manager for Windows and Linux"
 authors = ["Prof. Dattaraj S. Vidyasagar", "Prof. Yash D. Vidyasagar"]
 edition = "2024"
 
@@ -39,6 +39,9 @@ zstd = "0.13"
 lz4_flex = "0.11"
 brotli = "7.0"
 reed-solomon-erasure = "6.0"
+drag = "2.1.1"
+
+[target.'cfg(windows)'.dependencies]
 winreg = "0.52"
 # Startup check for the WebView2 runtime (same versions Tauri already uses).
 webview2-com = "0.39"
@@ -55,7 +58,12 @@ windows = { version = "0.58", features = [
     "Win32_System_Com",
     "Win32_System_Threading",
 ] }
-drag = "2.1.1"
+
+[target.'cfg(not(windows))'.dependencies]
+# Linux: the desktop's Trash, home folders and free space.
+trash = "5"
+dirs = "6"
+libc = "0.2"
 
 [profile.release]
 codegen-units = 1

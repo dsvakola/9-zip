@@ -1,17 +1,28 @@
 use crate::error::AppError;
-use crate::models::{DriveItem, FileItem};
+#[cfg(windows)]
+use crate::models::DriveItem;
+use crate::models::FileItem;
 use std::fs;
-use std::os::windows::fs::MetadataExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(windows)]
+use std::path::PathBuf;
+#[cfg(windows)]
 use windows::Win32::Foundation::BOOL;
+#[cfg(windows)]
 use windows::Win32::Storage::FileSystem::{
     GetDiskFreeSpaceExW, GetDriveTypeW, GetLogicalDriveStringsW,
 };
+#[cfg(windows)]
 use windows::Win32::UI::Shell::{
     FO_DELETE, FOF_ALLOWUNDO, FOF_NOCONFIRMATION, FOF_SILENT, SHFILEOPSTRUCTW, SHFileOperationW,
 };
+#[cfg(windows)]
 use windows::core::PCWSTR;
 
+#[cfg(not(windows))]
+pub use super::linux::{get_logical_drives, move_to_recycle_bin};
+
+#[cfg(windows)]
 pub fn get_logical_drives() -> Result<Vec<DriveItem>, AppError> {
     let mut drives = Vec::new();
     let mut buffer = [0u16; 512];
@@ -145,7 +156,7 @@ pub fn list_directory_entries(dir_path: &str) -> Result<Vec<FileItem>, AppError>
         let mut modified = None;
 
         if let Ok(meta) = entry.metadata() {
-            size = if is_dir { 0 } else { meta.file_size() };
+            size = if is_dir { 0 } else { meta.len() };
             modified = meta
                 .modified()
                 .ok()
@@ -208,6 +219,7 @@ fn is_archive_file(name: &str) -> bool {
         || lower.ends_with(".wim")
 }
 
+#[cfg(windows)]
 pub fn move_to_recycle_bin(paths: &[String]) -> Result<(), AppError> {
     if paths.is_empty() {
         return Ok(());

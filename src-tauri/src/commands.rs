@@ -1,10 +1,11 @@
-use crate::engine::{benchmark, compress, extract, file_ops, hasher, list, windows_fs};
+use crate::engine::{benchmark, compress, extract, file_ops, hasher, list, system_fs};
 use crate::error::AppError;
 use crate::models::{
     ArchiveEntry, BenchmarkResult, CompressOptions, DriveItem, ExtractOptions, FileItem,
     HashResult, ProgressPayload,
 };
 use crate::task_manager::TaskManager;
+#[cfg(windows)]
 use std::process::Command;
 use std::sync::Arc;
 use tauri::State;
@@ -12,12 +13,12 @@ use tauri::ipc::Channel;
 
 #[tauri::command]
 pub fn get_drives() -> Result<Vec<DriveItem>, AppError> {
-    windows_fs::get_logical_drives()
+    system_fs::get_logical_drives()
 }
 
 #[tauri::command]
 pub fn list_directory(path: String) -> Result<Vec<FileItem>, AppError> {
-    windows_fs::list_directory_entries(&path)
+    system_fs::list_directory_entries(&path)
 }
 
 #[tauri::command]
@@ -119,7 +120,7 @@ pub fn cancel_task(
 
 #[tauri::command]
 pub fn delete_to_recycle_bin(paths: Vec<String>) -> Result<(), AppError> {
-    windows_fs::move_to_recycle_bin(&paths)
+    system_fs::move_to_recycle_bin(&paths)
 }
 
 #[tauri::command]
@@ -155,7 +156,12 @@ pub fn register_shell_menu() -> Result<(), AppError> {
             "9-zip was installed from the Microsoft Store, so its Explorer menu is already set up by Windows.",
         ));
     }
-    crate::engine::context_menu::register_shell_context_menu()
+    #[cfg(windows)]
+    return crate::engine::context_menu::register_shell_context_menu();
+    #[cfg(not(windows))]
+    Err(AppError::new(
+        "The file manager menu for Linux is not available yet.",
+    ))
 }
 
 #[tauri::command]
@@ -203,11 +209,22 @@ pub fn open_path(path: String, verb: Option<String>) -> Result<(), AppError> {
 }
 
 #[tauri::command]
+#[cfg(windows)]
 pub fn show_properties(window: tauri::WebviewWindow, path: String) -> Result<(), AppError> {
     let owner = window
         .hwnd()
         .map_err(|e| AppError::new(format!("Cannot find the 9-zip window: {}", e)))?;
     file_ops::show_properties(owner.0, &path)
+}
+
+/// Linux has no common Properties window that every desktop shares.
+#[tauri::command]
+#[cfg(not(windows))]
+pub fn show_properties(_window: tauri::WebviewWindow, path: String) -> Result<(), AppError> {
+    Err(AppError::new(format!(
+        "The Properties window is not available on Linux yet ({}).",
+        path
+    )))
 }
 
 #[tauri::command]
@@ -381,6 +398,11 @@ pub fn start_drag_out(
     app.run_on_main_thread(move || {
         let files = paths.into_iter().map(std::path::PathBuf::from).collect();
         let image = drag::Image::Raw(include_bytes!("../icons/64x64.png").to_vec());
+        // On Linux the drag starts from the GTK window that holds the page.
+        #[cfg(not(windows))]
+        let Ok(window) = window.gtk_window() else {
+            return;
+        };
         let _ = drag::start_drag(
             &window,
             drag::DragItem::Files(files),
@@ -393,10 +415,19 @@ pub fn start_drag_out(
 }
 
 #[tauri::command]
+#[cfg(windows)]
 pub fn show_in_folder(path: String) -> Result<(), AppError> {
     Command::new("explorer")
         .args(["/select,", &path])
         .spawn()
         .map_err(|e| AppError::new(format!("Failed to open Explorer: {}", e)))?;
     Ok(())
+}
+
+/// Opens the file manager with the item selected.
+#[tauri::command]
+#[cfg(not(windows))]
+pub fn show_in_folder(path: String) -> Result<(), AppError> {
+    tauri_plugin_opener::reveal_item_in_dir(&path)
+        .map_err(|e| AppError::new(format!("Failed to open the file manager: {}", e)))
 }

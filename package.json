@@ -1,7 +1,7 @@
 {
   "name": "9-zip",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "license": "GPL-3.0-only",
   "homepage": "https://github.com/dsvakola/software",
   "repository": {
@@ -9,13 +9,14 @@
     "url": "https://github.com/dsvakola/9-zip.git"
   },
   "type": "module",
+  "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "check:ui": "node tests/ui-check.mjs",
-    "check": "tsc --noEmit && npm run check:ui && cd src-tauri && cargo clippy --all-targets -- -D warnings && cargo test"
+    "check": "tsc --noEmit && pnpm check:ui && cd src-tauri && cargo clippy --all-targets -- -D warnings && cargo test"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

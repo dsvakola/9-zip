@@ -1,6 +1,6 @@
 // Automatic window checks for 9-zip, run before every build:
 //
-//   npm run check:ui
+//   pnpm check:ui
 //
 // It opens the real 9-zip window code (index.html, src/main.ts) in Microsoft
 // Edge with a pretend backend, then checks what a reviewer would notice:
@@ -254,7 +254,7 @@ async function checkWindowFits(page, modalId, label) {
   fit.scrolls || fit.pageScrolls ? problem(`${label}: the dialog shows a scroll bar.`) : ok();
   fit.clipped.length ? problem(`${label}: these stick out of the dialog and are cut off: ${fit.clipped.join(", ")}`) : ok();
   fit.mainHidden ? ok() : problem(`${label}: the main window shows behind the dialog.`);
-  // Optional pictures at the real window size: UI_SHOTS=<folder> npm run check:ui
+  // Optional pictures at the real window size: UI_SHOTS=<folder> pnpm check:ui
   if (process.env.UI_SHOTS) {
     await page.screenshot({ path: join(process.env.UI_SHOTS, label.replace(/[^a-z0-9]+/gi, "-") + ".png") });
   }

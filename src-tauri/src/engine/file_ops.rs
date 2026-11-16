@@ -1,20 +1,26 @@
 //! File manager actions of the main window: open, rename, copy, move,
 //! favorites and known folders. Nothing here overwrites an existing file.
 
+#[cfg(not(windows))]
+pub use super::linux::{known_folders, open_with_shell, shortcut_folder};
 use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(windows)]
 use windows::Win32::UI::Shell::{
     FOLDERID_Desktop, FOLDERID_Documents, FOLDERID_Downloads, KF_FLAG_DEFAULT,
     SHGetKnownFolderPath, ShellExecuteW,
 };
+#[cfg(windows)]
 use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+#[cfg(windows)]
 use windows::core::{GUID, HSTRING, PCWSTR};
 
 /// Opens a file with the program Windows associates with it. `verb` is
 /// "open" (View) or "edit" (Edit); "edit" falls back to "open" when the
 /// file type has no editor.
+#[cfg(windows)]
 pub fn open_with_shell(path: &str, verb: &str) -> Result<(), AppError> {
     if !Path::new(path).exists() {
         return Err(AppError::new(format!(
@@ -48,6 +54,7 @@ pub fn open_with_shell(path: &str, verb: &str) -> Result<(), AppError> {
 
 /// Opens the Windows Properties window for a file or folder, as 7-Zip does.
 /// `owner` is the 9-zip window handle.
+#[cfg(windows)]
 pub fn show_properties(owner: *mut std::ffi::c_void, path: &str) -> Result<(), AppError> {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::Shell::{SHOP_FILEPATH, SHObjectProperties};
@@ -98,8 +105,13 @@ pub fn rename(path: &str, new_name: &str) -> Result<String, AppError> {
     Ok(target.to_string_lossy().to_string())
 }
 
+/// Windows file names ignore upper and lower case; Linux file names do not.
 fn same_path_ignoring_case(a: &Path, b: &Path) -> bool {
-    a.to_string_lossy().to_lowercase() == b.to_string_lossy().to_lowercase()
+    if cfg!(windows) {
+        a.to_string_lossy().to_lowercase() == b.to_string_lossy().to_lowercase()
+    } else {
+        a == b
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -187,6 +199,7 @@ pub struct KnownFolders {
     pub downloads: Option<String>,
 }
 
+#[cfg(windows)]
 fn known_folder(id: &GUID) -> Option<String> {
     unsafe {
         let path = SHGetKnownFolderPath(id, KF_FLAG_DEFAULT, None).ok()?;
@@ -198,6 +211,7 @@ fn known_folder(id: &GUID) -> Option<String> {
 
 /// The user's real Desktop, Documents and Downloads, even when OneDrive or
 /// a policy has moved them.
+#[cfg(windows)]
 pub fn known_folders() -> KnownFolders {
     KnownFolders {
         desktop: known_folder(&FOLDERID_Desktop),
@@ -254,6 +268,7 @@ pub fn save_settings(
 /// window opens there (a 9-zip shortcut on the Desktop shows the Desktop).
 /// Start menu and taskbar shortcuts are ignored: their folder means nothing
 /// to the user.
+#[cfg(windows)]
 pub fn shortcut_folder() -> Option<String> {
     use windows::Win32::System::Threading::{
         GetStartupInfoW, STARTF_TITLEISLINKNAME, STARTUPINFOW,
@@ -270,6 +285,7 @@ pub fn shortcut_folder() -> Option<String> {
     folder_for_shortcut(&link)
 }
 
+#[cfg(windows)]
 fn folder_for_shortcut(link: &str) -> Option<String> {
     let lower = link.to_lowercase();
     let menus = [
@@ -385,6 +401,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(windows)]
     fn start_folder_comes_from_ordinary_shortcuts_only() {
         let tmp = TempDir::new("shortcut");
         let link = tmp.0.join("9-zip.lnk");
@@ -407,6 +424,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(windows)]
     fn finds_the_desktop() {
         assert!(known_folders().desktop.is_some());
     }

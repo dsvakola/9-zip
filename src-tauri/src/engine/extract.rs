@@ -110,6 +110,12 @@ pub(crate) fn open_tar_stream<'a>(
 pub(crate) fn safe_join(base: &Path, rel: &str) -> Result<PathBuf, AppError> {
     use std::path::Component;
     let clean_rel = rel.replace('\\', "/");
+    if starts_with_drive_letter(&clean_rel) {
+        return Err(AppError::new(format!(
+            "Security warning: blocked unsafe path in archive: {}",
+            rel
+        )));
+    }
     let mut target = base.to_path_buf();
     for part in Path::new(&clean_rel).components() {
         match part {
@@ -124,6 +130,14 @@ pub(crate) fn safe_join(base: &Path, rel: &str) -> Result<PathBuf, AppError> {
         }
     }
     Ok(target)
+}
+
+/// True for names such as "C:/Windows/file.txt". Windows sees these as
+/// absolute paths; Linux would not, so they are checked by hand, and an
+/// archive is treated the same on both systems.
+pub(crate) fn starts_with_drive_letter(name: &str) -> bool {
+    let bytes = name.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
 /// Writes one extracted file to "<name>.9z-part" first and renames it into
