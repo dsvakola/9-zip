@@ -63,5 +63,7 @@ jobs:
           cache-key: flatpak-builder-${{ github.sha }}
       - name: Check that every library is found in the runtime
         run: |
-          flatpak-builder --run flatpak_app flatpak/io.github.dsvakola.NineZip.yml ldd /app/bin/9-zip | tee ldd.txt
+          set -o pipefail
+          flatpak-builder --disable-rofiles-fuse --run flatpak_app flatpak/io.github.dsvakola.NineZip.yml ldd /app/bin/9-zip | tee ldd.txt
+          grep -q "libwebkit2gtk-4.1" ldd.txt
           ! grep "not found" ldd.txt
