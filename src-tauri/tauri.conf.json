@@ -41,7 +41,6 @@
       "icons/32x32.png",
       "icons/64x64.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png",
       "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
@@ -60,20 +59,26 @@
         "section": "utils",
         "files": {
           "/usr/share/icons/hicolor/scalable/apps/9-zip.svg": "../branding/9-zip-icon.svg",
-          "/usr/share/mime/packages/9-zip.xml": "linux/9-zip-mime.xml"
+          "/usr/share/mime/packages/9-zip.xml": "linux/9-zip-mime.xml",
+          "/usr/share/doc/9-zip/copyright": "../LICENSE",
+          "/usr/share/doc/9-zip/NOTICE": "../NOTICE"
         }
       },
       "rpm": {
         "desktopTemplate": "linux/9-zip.desktop",
         "files": {
           "/usr/share/icons/hicolor/scalable/apps/9-zip.svg": "../branding/9-zip-icon.svg",
-          "/usr/share/mime/packages/9-zip.xml": "linux/9-zip-mime.xml"
+          "/usr/share/mime/packages/9-zip.xml": "linux/9-zip-mime.xml",
+          "/usr/share/doc/9-zip/copyright": "../LICENSE",
+          "/usr/share/doc/9-zip/NOTICE": "../NOTICE"
         }
       },
       "appimage": {
         "bundleMediaFramework": false,
         "files": {
-          "/usr/share/icons/hicolor/scalable/apps/9-zip.svg": "../branding/9-zip-icon.svg"
+          "/usr/share/icons/hicolor/scalable/apps/9-zip.svg": "../branding/9-zip-icon.svg",
+          "/usr/share/doc/9-zip/copyright": "../LICENSE",
+          "/usr/share/doc/9-zip/NOTICE": "../NOTICE"
         }
       }
     }
