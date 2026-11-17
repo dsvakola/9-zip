@@ -33,20 +33,20 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">io.github.dsvakola.NineZip.desktop</launchable>
+  <launchable type="desktop-id">9-zip.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">
       <caption>A self-healing .9z archive, opened like a folder</caption>
-      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/1-9z-archive.png</image>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/main/src-tauri/linux/screenshots/1-9z-archive.png</image>
     </screenshot>
     <screenshot>
       <caption>Browsing folders and archives</caption>
-      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/2-main-window.png</image>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/main/src-tauri/linux/screenshots/2-main-window.png</image>
     </screenshot>
     <screenshot>
       <caption>Adding files to an archive</caption>
-      <image>https://raw.githubusercontent.com/dsvakola/9-zip/v1.3.2/flatpak/screenshots/3-add-to-archive.png</image>
+      <image>https://raw.githubusercontent.com/dsvakola/9-zip/main/src-tauri/linux/screenshots/3-add-to-archive.png</image>
     </screenshot>
   </screenshots>
 
@@ -81,7 +81,7 @@
         <p>First release for Linux.</p>
         <ul>
           <li>Places list with Home and USB drives, Linux Trash, Properties window</li>
-          <li>Right-click menus for Files, Nemo and Dolphin (outside Flatpak)</li>
+          <li>Right-click menus for Files, Nemo and Dolphin (outside app stores)</li>
           <li>Opens .9z and other archives from the file manager</li>
         </ul>
       </description>

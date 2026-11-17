@@ -1,0 +1,35 @@
+# Test build of the Snap Store package from this branch. It builds the
+# snap, installs it, checks that every library is found and that 9-zip
+# starts. The .snap file is kept under "Artifacts" on the run's page.
+name: Snap
+
+on:
+  push:
+    branches: [linux]
+  workflow_dispatch:
+
+jobs:
+  snap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap
+          path: ${{ steps.build.outputs.snap }}
+      - name: Install the snap and check it
+        shell: bash
+        run: |
+          set -eo pipefail
+          sudo snap install --dangerous ${{ steps.build.outputs.snap }}
+          snap run --shell 9-zip-archiver -c 'ldd "$SNAP/usr/bin/9-zip"' | tee ldd.txt
+          grep -q "libwebkit2gtk-4.1" ldd.txt
+          ! grep "not found" ldd.txt
+          sudo apt-get install -y xvfb
+          xvfb-run -a timeout 20 9-zip-archiver > run.txt 2>&1 || code=$?
+          cat run.txt
+          # timeout ends the still-running app with code 124: it started fine.
+          test "${code:-0}" = 124

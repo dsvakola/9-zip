@@ -1,0 +1,78 @@
+# Snap Store package of 9-zip. Built from source on Ubuntu 24.04:
+# the normal Linux build makes the .deb, whose files go into the snap.
+name: 9-zip-archiver
+title: 9-zip Archiver
+summary: Archive manager with the self-healing .9z format
+description: |
+  9-zip is a free archive manager. It looks and works like a classic
+  two-pane archiver: browse your folders, open archives like folders,
+  and add, extract and test files with a few clicks.
+
+  It creates 10 formats: 9Z, 7Z, ZIP, TAR, GZIP, BZIP2, XZ, ZSTD, LZ4 and
+  BROTLI. Its own .9z format adds three features:
+
+  - Self-healing: Reed-Solomon recovery data repairs damaged blocks
+  - Smart-adaptive: solid LZMA2 for text and code, while photos and
+    videos are stored as they are
+  - VSA Integrity Seal: every file is checked against its SHA-256
+    fingerprint
+
+  Also included: AES-256 encryption for 7z and zip, CRC and SHA
+  checksums, a compression benchmark, and favorite folders.
+
+  To work with files on USB drives, run once:
+  sudo snap connect 9-zip-archiver:removable-media
+
+  Developed by Prof. Dattaraj S. Vidyasagar and Prof. Yash D. Vidyasagar
+  for Vidyasagar Academy. https://vsa.edu.in/software/
+license: GPL-3.0-only
+website: https://vsa.edu.in/software/
+source-code: https://github.com/dsvakola/9-zip
+issues: https://github.com/dsvakola/9-zip/issues
+contact: softinquiry@vsa.edu.in
+icon: branding/9-zip-icon.svg
+adopt-info: ninezip
+base: core24
+grade: stable
+confinement: strict
+platforms:
+  amd64:
+
+apps:
+  9-zip-archiver:
+    command: usr/bin/9-zip
+    desktop: usr/share/applications/9-zip.desktop
+    extensions: [gnome]
+    plugs:
+      - home
+      - removable-media
+
+parts:
+  ninezip:
+    plugin: nil
+    source: .
+    build-snaps:
+      - node/22/stable
+      - rustup/latest/stable
+    build-packages:
+      - libwebkit2gtk-4.1-dev
+      - libgtk-3-dev
+      - librsvg2-dev
+      - libayatana-appindicator3-dev
+      - libxdo-dev
+      - patchelf
+      - jq
+    stage-packages:
+      - libxdo3
+      - libayatana-appindicator3-1
+    override-build: |
+      set -eu
+      rustup default stable
+      export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+      corepack pnpm install --frozen-lockfile
+      corepack pnpm tauri build --bundles deb
+      dpkg -x src-tauri/target/release/bundle/deb/*.deb "$CRAFT_PART_INSTALL/"
+      # The snap shows its own icon; the menu entry points to it.
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/9-zip.svg|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/9-zip.desktop"
+      craftctl set version="$(jq -r .version src-tauri/tauri.conf.json)"
