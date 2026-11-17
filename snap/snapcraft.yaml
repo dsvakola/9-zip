@@ -67,6 +67,9 @@ parts:
       - libayatana-appindicator3-1
     override-build: |
       set -eu
+      # The GNOME build environment points LD_LIBRARY_PATH at its own C
+      # library, which breaks the rustup and node programs.
+      unset LD_LIBRARY_PATH
       rustup default stable
       export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
       corepack pnpm install --frozen-lockfile
