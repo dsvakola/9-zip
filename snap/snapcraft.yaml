@@ -63,9 +63,6 @@ parts:
       - patchelf
       - jq
       - curl
-    stage-packages:
-      - libxdo3
-      - libayatana-appindicator3-1
     override-build: |
       set -eu
       # The GNOME build environment points LD_LIBRARY_PATH at its own C
