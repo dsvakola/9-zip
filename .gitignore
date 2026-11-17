@@ -28,3 +28,4 @@ dist-ssr
 /src-tauri/shell-ext/target/
 /src-tauri/target/
 .claude/
+.pnpm-home/
