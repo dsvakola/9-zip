@@ -1,8 +1,8 @@
 # Builds the Linux packages of 9-zip: AppImage, .deb and .rpm.
 # Ubuntu 22.04 is used so the packages also run on older Linux versions.
 # A push to the "linux" branch gives test packages (under "Artifacts" on
-# the run's page). A version tag such as v1.3.0 also prepares a draft
-# GitHub Release with the packages, to be published by hand.
+# the run's page). A version tag such as v1.3.0 also adds the packages to
+# that GitHub Release (created if it does not exist yet).
 name: Linux packages
 
 on:
@@ -47,11 +47,11 @@ jobs:
             Release/*.rpm
             Release/*.AppImage
 
-      - name: Draft GitHub Release
+      - name: Add packages to the GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          draft: false
           files: |
             Release/*.deb
             Release/*.rpm
