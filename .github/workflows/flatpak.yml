@@ -10,6 +10,7 @@ on:
 jobs:
   deb:
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Linux build packages
@@ -36,6 +37,7 @@ jobs:
   flatpak:
     needs: deb
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
       options: --privileged
